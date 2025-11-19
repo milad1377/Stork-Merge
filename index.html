@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StorkMerge: Data Chain</title>
+    <style>
+        /* ------------------------------------------------------------------ */
+        /* --- CSS: Styles and Theme (StorkMerge) --- */
+        /* ------------------------------------------------------------------ */
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a2e; /* Dark Blue */
+            color: #e6e6e6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            user-select: none;
+        }
+
+        /* --- Main Game Logo Styling (Optional: you might remove this if start_logo is the main one) --- */
+        /* For now, keeping it as it was in game-header */
+        #game-logo {
+            margin-bottom: 20px; 
+            max-width: 180px; 
+            height: auto;
+            display: block; 
+        }
+        @media (max-width: 500px) {
+            #game-logo {
+                max-width: 120px; 
+                margin-top: 15px; 
+            }
+        }
+
+
+        /* --- Header & Score --- */
+        #game-header {
+            width: 440px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        #score-info {
+            display: flex;
+            gap: 15px;
+        }
+        .score-box {
+            background-color: #2c2c54;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 1em;
+            text-align: center;
+        }
+        .score-label {
+            font-size: 0.8em;
+            color: #ccc;
+        }
+        .score-value {
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        #restart-btn {
+            padding: 10px 15px;
+            background-color: #00ff99; 
+            color: #1a1a2e;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        #restart-btn:hover { background-color: #00cc77; }
+
+
+        /* --- Game Board (Desktop Default) --- */
+        #game-container {
+            background-color: #2c2c54;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            display: grid;
+            grid-template-columns: repeat(4, 100px);
+            grid-template-rows: repeat(4, 100px);
+            gap: 10px;
+        }
+        .tile {
+            width: 100px;
+            height: 100px;
+            background-color: #3b3b64;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0; 
+            transition: 0.1s ease-in-out; 
+            position: relative;
+            user-select: none;
+            
+            background-size: 90%; 
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        /* --- Tile Colors (Stork Theme) --- */
+        .tile-2 { background-color: #6a6a99; }
+        .tile-4 { background-color: #8a8ac2; }
+        .tile-8 { background-color: #a9a9ed; }
+        .tile-16 { background-color: #c8c8ff; }
+        .tile-32 { background-color: #00ff99; }
+        .tile-64 { background-color: #00bfff; }
+        .tile-128 { background-color: #ffeb3b; } 
+        .tile-256 { background-color: #ff9900; }
+        .tile-512 { background-color: #ff4500; }
+        .tile-1024 { background-color: #dc143c; }
+        .tile-2048 { background-color: #8b0000; } 
+        .tile-4096 { background-color: #6a0dad; }
+
+
+        /* --- Start Screen Styles --- */
+        #start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1a1a2e; 
+            color: white;
+            display: flex; 
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            z-index: 101; 
+            text-align: center;
+        }
+        /* NEW: Styling for the start logo */
+        #start-logo {
+            margin-bottom: 30px; /* Space between logo and text */
+            max-width: 250px; /* Adjust size as needed */
+            height: auto;
+            display: block;
+        }
+        #start-screen h2 {
+            color: #00ff99;
+            margin-bottom: 30px;
+        }
+        #start-button {
+            padding: 15px 30px;
+            background-color: #ffeb3b; 
+            color: #1a1a2e;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        #start-button:hover { opacity: 0.8; }
+
+
+        /* --- Keyboard Instructions (Desktop Only) --- */
+        #keyboard-info {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #2c2c54;
+            border-radius: 5px;
+            font-size: 0.9em;
+            text-align: center;
+            width: 420px;
+        }
+
+        /* --- Mobile Controls (D-Pad) --- */
+        #mobile-controls {
+            display: none; 
+            margin-top: 25px;
+            width: 350px; 
+            text-align: center;
+        }
+        .mobile-dpad {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 10px;
+            margin: 0 auto;
+            width: 250px; 
+        }
+        .move-btn {
+            padding: 20px; 
+            background-color: #00ff99; 
+            color: #1a1a2e;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.8em; 
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            height: 60px; 
+            transition: background-color 0.2s;
+        }
+        .move-btn:active { background-color: #00cc77; }
+        
+        /* D-Pad Layout specific styles */
+        .move-btn[data-direction="up"] { grid-column: 2; grid-row: 1; }
+        .move-btn[data-direction="left"] { grid-column: 1; grid-row: 2; }
+        .move-btn[data-direction="right"] { grid-column: 3; grid-row: 2; }
+        .move-btn[data-direction="down"] { grid-column: 2; grid-row: 2; }
+
+        /* --- Game Over Screen --- */
+        #game-over-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95); 
+            color: white;
+            display: none; 
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            z-index: 100;
+            text-align: center;
+        }
+        #final-score-details {
+            margin: 20px 0;
+            padding: 15px 30px;
+            background-color: #2c2c54;
+            border-radius: 10px;
+        }
+        .final-score-line {
+            margin: 10px 0;
+            font-size: 1em;
+        }
+        .final-score-value {
+            color: #00ff99;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .final-score-line.high-score {
+            color: #ffeb3b; 
+        }
+        #game-over-screen button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+        #game-over-screen button:hover { opacity: 0.8; }
+
+        #restart-game-btn {
+            background-color: #00ff99;
+            color: #1a1a2e;
+        }
+        #tweet-btn {
+            background-color: #1DA1F2; 
+            color: white;
+            margin-left: 10px;
+        }
+
+        /* --- Media Query for Mobile --- */
+        @media (max-width: 500px) {
+            #mobile-controls {
+                display: block; 
+            }
+            #keyboard-info {
+                display: none; 
+            }
+            #game-header {
+                width: 90%; 
+                margin-top: 20px;
+            }
+            #game-container {
+                grid-template-columns: repeat(4, 95px); 
+                grid-template-rows: repeat(4, 95px);
+            }
+            .tile {
+                width: 95px; 
+                height: 95px;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    <img id="game-logo" src="logo.png" alt="StorkMerge Logo">
+
+    <div id="start-screen">
+        <img id="start-logo" src="start_logo.png" alt="StorkMerge Start Logo">
+        <h2>Welcome to Stork Merge</h2>
+        <button id="start-button">Click to Start Game</button>
+    </div>
+
+    <div id="game-header">
+        <h1>Stork Merge</h1>
+        <div id="score-info">
+            <div id="current-score-box" class="score-box">
+                <div class="score-label">SCORE</div>
+                <div id="score" class="score-value">0</div>
+            </div>
+            <div id="high-score-box" class="score-box">
+                <div class="score-label">BEST</div>
+                <div id="high-score" class="score-value">0</div>
+            </div>
+        </div>
+        <button id="restart-btn">Restart Game</button>
+    </div>
+
+    <div id="game-container">
+        </div>
+
+    <div id="keyboard-info">
+        Use **Arrow Keys** or **WASD** to move the tiles.
+    </div>
+
+    <div id="mobile-controls">
+        <div class="mobile-dpad">
+            <button class="move-btn" data-direction="up">↑</button>
+            <button class="move-btn" data-direction="left">←</button>
+            <button class="move-btn" data-direction="right">→</button>
+            <button class="move-btn" data-direction="down">↓</button>
+        </div>
+    </div>
+
+    <div id="game-over-screen">
+        <h2>Game Over! 😔</h2>
+        <div id="final-score-details">
+            <div class="final-score-line">Your Final Score: <span id="final-score-value" class="final-score-value">0</span></div>
+            <div class="final-score-line high-score">High Score: <span id="final-high-score-value" class="final-score-value">0</span></div>
+        </div>
+        <div>
+            <button id="restart-game-btn" onclick="restartGame()">Try Again</button>
+            <button id="tweet-btn">Share Score on X 🐦</button>
+        </div>
+    </div>
+
+    <script>
+        // ------------------------------------------------------------------
+        // --- JavaScript: Game Logic, High Score, and Controls ---
+        // ------------------------------------------------------------------
+        
+        const GRID_SIZE = 4;
+        const scoreDisplay = document.getElementById('score');
+        const highScoreDisplay = document.getElementById('high-score');
+        const gameContainer = document.getElementById('game-container');
+        const restartButton = document.getElementById('restart-btn');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const mobileControls = document.getElementById('mobile-controls');
+        const tweetButton = document.getElementById('tweet-btn'); 
+        const startScreen = document.getElementById('start-screen'); 
+        const startButton = document.getElementById('start-button'); 
+
+        let board = []; 
+        let score = 0;
+        let highScore = 0; 
+        let isGameOver = false;
+        let mergeHappened = false; 
+        let audioInitialized = false; 
+
+        // --- Web Audio API Setup ---
+        let audioContext = null; 
+        let audioBuffers = {}; // To store decoded audio data
+
+        const SOUND_URLS = {
+            move: 'https://s3.amazonaws.com/iam-dev-audio/2048/move.mp3',
+            merge: 'https://s3.amazonaws.com/iam-dev-audio/2048/merge.mp3',
+            gameOver: 'https://s3.amazonaws.com/iam-dev-audio/2048/gameover.mp3'
+        };
+
+        // 1. Function to fetch and decode audio files
+        async function loadSound(url, name) {
+            try {
+                const response = await fetch(url);
+                const arrayBuffer = await response.arrayBuffer();
+                audioBuffers[name] = await audioContext.decodeAudioData(arrayBuffer);
+            } catch (error) {
+                console.error(`Error loading or decoding sound ${name}:`, error);
+            }
+        }
+
+        // 2. Function to play a sound using AudioContext
+        function playSound(name) {
+            if (!audioInitialized || !audioBuffers[name] || audioContext.state === 'suspended') return;
+            
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffers[name];
+            source.connect(audioContext.destination);
+            source.start(0); // Play immediately
+        }
+
+        // 3. Function to initialize AudioContext on user interaction
+        async function initializeAudioAndStartGame() {
+            if (audioInitialized) return;
+
+            // Create or resume AudioContext (needs user interaction)
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+
+            // Load all sounds asynchronously
+            await Promise.all([
+                loadSound(SOUND_URLS.move, 'move'),
+                loadSound(SOUND_URLS.merge, 'merge'),
+                loadSound(SOUND_URLS.gameOver, 'gameOver')
+            ]);
+            
+            audioInitialized = true;
+            
+            // Hide the start screen and initialize the game
+            startScreen.style.display = 'none';
+            initializeGame();
+            console.log("Web Audio API initialized and game started.");
+        }
+        
+        // --- Image Map (Unchanged) ---
+        const IMAGE_MAP = {
+            2: "tile_2.png", 4: "tile_4.png", 8: "tile_8.png", 16: "tile_16.png",
+            32: "tile_32.png", 64: "tile_64.png", 128: "tile_128.png", 256: "tile_256.png",
+            512: "tile_512.png", 1024: "tile_1024.png", 2048: "tile_2048.png", 4096: "tile_4096.png" 
+        };
+
+        function getImageUrl(value) {
+            return IMAGE_MAP[value] || ''; 
+        }
+
+        // --- High Score Logic (Unchanged) ---
+        function loadHighScore() {
+            const storedScore = localStorage.getItem('storkMergeHighScore');
+            if (storedScore) {
+                highScore = parseInt(storedScore);
+            }
+            highScoreDisplay.textContent = highScore;
+        }
+
+        function saveHighScore() {
+            localStorage.setItem('storkMergeHighScore', highScore);
+        }
+
+        // --- Game Setup ---
+        function initializeGame() {
+            board = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
+            score = 0;
+            isGameOver = false;
+            gameOverScreen.style.display = 'none';
+
+            loadHighScore();
+
+            gameContainer.innerHTML = '';
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const tile = document.createElement('div');
+                    tile.classList.add('tile');
+                    tile.id = `tile-${r}-${c}`;
+                    gameContainer.appendChild(tile);
+                }
+            }
+
+            addRandomTile();
+            addRandomTile();
+            updateBoardUI();
+        }
+
+        // --- Core Logic (Movements, Merges, Updates) ---
+
+        function merge(row) {
+            let initialScore = score;
+            for (let i = GRID_SIZE - 1; i > 0; i--) {
+                if (row[i] === row[i - 1] && row[i] !== 0) {
+                    row[i] *= 2;
+                    score += row[i];
+                    row[i - 1] = 0;
+                }
+            }
+            if (score > initialScore) {
+                mergeHappened = true; 
+            }
+            return row;
+        }
+        
+        function processMove(moveFunction) {
+            if (isGameOver || !audioInitialized) return false; 
+
+            mergeHappened = false; 
+
+            const moved = moveFunction();
+
+            if (moved) {
+                if (mergeHappened) {
+                    playSound('merge'); 
+                } else {
+                    playSound('move'); 
+                }
+                addRandomTile();
+                updateBoardUI();
+                checkGameOver();
+            }
+            return moved;
+        }
+        
+        function slide(row) {
+            let arr = row.filter(val => val !== 0);
+            let zeros = Array(GRID_SIZE - arr.length).fill(0);
+            return zeros.concat(arr);
+        }
+
+        function moveRight() {
+            let boardChanged = false;
+            for (let r = 0; r < GRID_SIZE; r++) {
+                let originalRow = [...board[r]];
+                let row = board[r];
+                row = slide(row);
+                row = merge(row);
+                row = slide(row);
+                board[r] = row;
+                if (originalRow.some((val, i) => val !== row[i])) {
+                    boardChanged = true;
+                }
+            }
+            return boardChanged;
+        }
+
+        function moveLeft() {
+            let boardChanged = false;
+            for (let r = 0; r < GRID_SIZE; r++) {
+                let originalRow = [...board[r]];
+                let row = board[r];
+                row.reverse();
+                row = slide(row);
+                row = merge(row);
+                row = slide(row);
+                row.reverse();
+                board[r] = row;
+                if (originalRow.some((val, i) => val !== row[i])) {
+                    boardChanged = true;
+                }
+            }
+            return boardChanged;
+        }
+
+        function moveUp() {
+            let boardChanged = false;
+            for (let c = 0; c < GRID_SIZE; c++) {
+                let col = [];
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    col.push(board[r][c]);
+                }
+                let originalCol = [...col];
+                col.reverse();
+                col = slide(col);
+                col = merge(col);
+                col = slide(col);
+                col.reverse();
+
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    board[r][c] = col[r];
+                }
+                if (originalCol.some((val, i) => val !== col[i])) {
+                    boardChanged = true;
+                }
+            }
+            return boardChanged;
+        }
+
+        function moveDown() {
+            let boardChanged = false;
+            for (let c = 0; c < GRID_SIZE; c++) {
+                let col = [];
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    col.push(board[r][c]);
+                }
+                let originalCol = [...col];
+                col = slide(col);
+                col = merge(col);
+                col = slide(col);
+                
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    board[r][c] = col[r];
+                }
+                if (originalCol.some((val, i) => val !== col[i])) {
+                    boardChanged = true;
+                }
+            }
+            return boardChanged;
+        }
+
+        function addRandomTile() {
+            if (isBoardFull()) return false;
+
+            let r, c;
+            do {
+                r = Math.floor(Math.random() * GRID_SIZE);
+                c = Math.floor(Math.random() * GRID_SIZE);
+            } while (board[r][c] !== 0);
+
+            board[r][c] = (Math.random() < 0.9) ? 2 : 4; 
+            return true;
+        }
+
+        function updateBoardUI() {
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const tileElement = document.getElementById(`tile-${r}-${c}`);
+                    const value = board[r][c];
+
+                    tileElement.className = 'tile'; 
+                    tileElement.style.backgroundImage = 'none';
+                    tileElement.textContent = ''; 
+
+                    if (value !== 0) {
+                        const imageUrl = getImageUrl(value);
+                        
+                        if (imageUrl) {
+                            tileElement.style.backgroundImage = `url('${imageUrl}')`;
+                        }
+                        
+                        tileElement.classList.add(`tile-${value}`); 
+                    }
+                }
+            }
+            scoreDisplay.textContent = score;
+            if (score > highScore) {
+                highScore = score;
+                highScoreDisplay.textContent = highScore;
+            }
+        }
+
+        // --- Game Over Checks ---
+        function isBoardFull() {
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    if (board[r][c] === 0) return false;
+                }
+            }
+            return true;
+        }
+
+        function hasMoves() {
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE - 1; c++) {
+                    if (board[r][c] === board[r][c+1]) return true; 
+                }
+            }
+            for (let c = 0; c < GRID_SIZE; c++) {
+                for (let r = 0; r < GRID_SIZE - 1; r++) {
+                    if (board[r][c] === board[r+1][c]) return true; 
+                }
+            }
+            return false;
+        }
+
+        function checkGameOver() {
+            if (isBoardFull() && !hasMoves()) {
+                isGameOver = true;
+                
+                if (score > parseInt(localStorage.getItem('storkMergeHighScore') || 0)) {
+                    saveHighScore(); 
+                }
+                
+                document.getElementById('final-score-value').textContent = score;
+                document.getElementById('final-high-score-value').textContent = highScore; 
+
+                gameOverScreen.style.display = 'flex';
+                playSound('gameOver'); 
+            }
+        }
+
+        // --- Input Control (Keyboard - Uses processMove) ---
+        document.addEventListener('keyup', (e) => {
+            if (isGameOver) return;
+            
+            let moveFunction = null;
+
+            switch (e.code) {
+                case 'ArrowLeft':
+                case 'KeyA':
+                    moveFunction = moveLeft;
+                    break;
+                case 'ArrowRight':
+                case 'KeyD':
+                    moveFunction = moveRight;
+                    break;
+                case 'ArrowUp':
+                case 'KeyW':
+                    moveFunction = moveUp;
+                    break;
+                case 'ArrowDown':
+                case 'KeyS':
+                    moveFunction = moveDown;
+                    break;
+                default:
+                    return;
+            }
+
+            if (moveFunction) {
+                processMove(moveFunction);
+            }
+        });
+
+        // --- Mobile Input Control (Buttons - Uses processMove) ---
+        mobileControls.addEventListener('click', (e) => {
+            if (isGameOver || !e.target.classList.contains('move-btn')) return;
+
+            const direction = e.target.getAttribute('data-direction');
+            let moveFunction = null;
+
+            switch (direction) {
+                case 'left':
+                    moveFunction = moveLeft;
+                    break;
+                case 'right':
+                    moveFunction = moveRight;
+                    break;
+                case 'up':
+                    moveFunction = moveUp;
+                    break;
+                case 'down':
+                    moveFunction = moveDown;
+                    break;
+            }
+
+            if (moveFunction) {
+                processMove(moveFunction);
+            }
+        });
+
+        // --- Restart & Share Controls ---
+        restartButton.addEventListener('click', initializeGame);
+        function restartGame() {
+            initializeGame();
+        }
+        
+        tweetButton.addEventListener('click', () => {
+            const gameName = "Stork Merge";
+            const message = `I scored ${score} in ${gameName}! Can you beat my high score of ${highScore}? 
+#StorkMerge #StorkOracle #Web3Gaming`;
+            
+            const tweetUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(message)}`;
+            window.open(tweetUrl, '_blank');
+        });
+
+
+        // --- Initial Trigger ---
+        // Game must be started via the Start Button click
+        startButton.addEventListener('click', initializeAudioAndStartGame);
+
+    </script>
+</body>
+</html>
