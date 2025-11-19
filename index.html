@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Stork Merge</title>
     <style>
         /* ------------------------------------------------------------------ */
@@ -22,8 +22,6 @@
             user-select: none;
         }
 
-        /* --- Main Game Logo Styling (Optional: you might remove this if start_logo is the main one) --- */
-        /* For now, keeping it as it was in game-header */
         #game-logo {
             margin-bottom: 20px; 
             max-width: 180px; 
@@ -37,8 +35,6 @@
             }
         }
 
-
-        /* --- Header & Score --- */
         #game-header {
             width: 440px;
             display: flex;
@@ -78,8 +74,6 @@
         }
         #restart-btn:hover { background-color: #00cc77; }
 
-
-        /* --- Game Board (Desktop Default) --- */
         #game-container {
             background-color: #2c2c54;
             border-radius: 8px;
@@ -102,13 +96,11 @@
             transition: 0.1s ease-in-out; 
             position: relative;
             user-select: none;
-            
             background-size: 90%; 
             background-repeat: no-repeat;
             background-position: center;
         }
 
-        /* --- Tile Colors (Stork Theme) --- */
         .tile-2 { background-color: #6a6a99; }
         .tile-4 { background-color: #8a8ac2; }
         .tile-8 { background-color: #a9a9ed; }
@@ -122,8 +114,6 @@
         .tile-2048 { background-color: #8b0000; } 
         .tile-4096 { background-color: #6a0dad; }
 
-
-        /* --- Start Screen Styles --- */
         #start-screen {
             position: fixed;
             top: 0;
@@ -140,10 +130,9 @@
             z-index: 101; 
             text-align: center;
         }
-        /* NEW: Styling for the start logo */
         #start-logo {
-            margin-bottom: 30px; /* Space between logo and text */
-            max-width: 250px; /* Adjust size as needed */
+            margin-bottom: 30px; 
+            max-width: 250px; 
             height: auto;
             display: block;
         }
@@ -164,8 +153,6 @@
         }
         #start-button:hover { opacity: 0.8; }
 
-
-        /* --- Keyboard Instructions (Desktop Only) --- */
         #keyboard-info {
             margin-top: 15px;
             padding: 10px;
@@ -176,7 +163,6 @@
             width: 420px;
         }
 
-        /* --- Mobile Controls (D-Pad) --- */
         #mobile-controls {
             display: none; 
             margin-top: 25px;
@@ -205,14 +191,11 @@
             transition: background-color 0.2s;
         }
         .move-btn:active { background-color: #00cc77; }
-        
-        /* D-Pad Layout specific styles */
         .move-btn[data-direction="up"] { grid-column: 2; grid-row: 1; }
         .move-btn[data-direction="left"] { grid-column: 1; grid-row: 2; }
         .move-btn[data-direction="right"] { grid-column: 3; grid-row: 2; }
         .move-btn[data-direction="down"] { grid-column: 2; grid-row: 2; }
 
-        /* --- Game Over Screen --- */
         #game-over-screen {
             position: fixed;
             top: 0;
@@ -269,7 +252,6 @@
             margin-left: 10px;
         }
 
-        /* --- Media Query for Mobile --- */
         @media (max-width: 500px) {
             #mobile-controls {
                 display: block; 
@@ -293,7 +275,7 @@
     </style>
 </head>
 <body>
-    
+
     <img id="game-logo" src="logo.png" alt="StorkMerge Logo">
 
     <div id="start-screen">
@@ -317,11 +299,10 @@
         <button id="restart-btn">Restart Game</button>
     </div>
 
-    <div id="game-container">
-        </div>
+    <div id="game-container"></div>
 
     <div id="keyboard-info">
-        Use **Arrow Keys** or **WASD** to move the tiles.
+        Use <strong>Arrow Keys</strong> or <strong>WASD</strong> to move the tiles.
     </div>
 
     <div id="mobile-controls">
@@ -341,15 +322,15 @@
         </div>
         <div>
             <button id="restart-game-btn" onclick="restartGame()">Try Again</button>
-            <button id="tweet-btn">Share Score on X </button>
+            <button id="tweet-btn">Share Score on X</button>
         </div>
     </div>
 
     <script>
         // ------------------------------------------------------------------
-        // --- JavaScript: Game Logic, High Score, and Controls ---
+        // --- JavaScript: Game Logic, High Score, Controls and Audio
         // ------------------------------------------------------------------
-        
+
         const GRID_SIZE = 4;
         const scoreDisplay = document.getElementById('score');
         const highScoreDisplay = document.getElementById('high-score');
@@ -366,65 +347,79 @@
         let highScore = 0; 
         let isGameOver = false;
         let mergeHappened = false; 
-        let audioInitialized = false; 
 
-        // --- Web Audio API Setup ---
-        let audioContext = null; 
-        let audioBuffers = {}; // To store decoded audio data
+        // ------------------------
+        // Audio: synthesised tones (no files)
+        // ------------------------
+        let audioContext = null;
+        let audioInitialized = false;
 
-        const SOUND_URLS = {
-            move: 'https://s3.amazonaws.com/iam-dev-audio/2048/move.mp3',
-            merge: 'https://s3.amazonaws.com/iam-dev-audio/2048/merge.mp3',
-            gameOver: 'https://s3.amazonaws.com/iam-dev-audio/2048/gameover.mp3'
+        // parameters for the three sounds (frequency in Hz and envelope)
+        const SOUND_PARAMS = {
+            move: { freq: 440, duration: 0.12 },
+            merge: { freq: 660, duration: 0.18 },
+            gameOver: { freq: 220, duration: 0.5 }
         };
 
-        // 1. Function to fetch and decode audio files
-        async function loadSound(url, name) {
+        function ensureAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            // Note: do not forcibly resume here; resume on user interaction
+        }
+
+        // play a short oscillator tone with a quick envelope
+        async function playSynth(name) {
             try {
-                const response = await fetch(url);
-                const arrayBuffer = await response.arrayBuffer();
-                audioBuffers[name] = await audioContext.decodeAudioData(arrayBuffer);
-            } catch (error) {
-                console.error(`Error loading or decoding sound ${name}:`, error);
+                ensureAudioContext();
+                if (!audioContext) return;
+                if (audioContext.state === 'suspended') {
+                    // try to resume; user interaction is required on some platforms
+                    try { await audioContext.resume(); } catch (e) { return; }
+                }
+
+                const params = SOUND_PARAMS[name];
+                if (!params) return;
+
+                const now = audioContext.currentTime;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(params.freq, now);
+
+                // quick attack, short decay
+                const attack = 0.01;
+                const decay = params.duration - 0.02;
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.25, now + attack);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + params.duration);
+
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+
+                osc.start(now);
+                osc.stop(now + params.duration + 0.02);
+
+                // cleanup after stop
+                osc.onended = () => {
+                    try { osc.disconnect(); gain.disconnect(); } catch(e){ }
+                };
+            } catch (err) {
+                // Fail silently - audio should not break the game
+                console.warn('playSynth error', err);
             }
         }
 
-        // 2. Function to play a sound using AudioContext
+        // convenience wrapper called throughout the game
         function playSound(name) {
-            if (!audioInitialized || !audioBuffers[name] || audioContext.state === 'suspended') return;
-            
-            const source = audioContext.createBufferSource();
-            source.buffer = audioBuffers[name];
-            source.connect(audioContext.destination);
-            source.start(0); // Play immediately
+            // non-blocking; we purposely don't await
+            playSynth(name).catch(()=>{});
         }
 
-        // 3. Function to initialize AudioContext on user interaction
-        async function initializeAudioAndStartGame() {
-            if (audioInitialized) return;
-
-            // Create or resume AudioContext (needs user interaction)
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioContext.state === 'suspended') {
-                await audioContext.resume();
-            }
-
-            // Load all sounds asynchronously
-            await Promise.all([
-                loadSound(SOUND_URLS.move, 'move'),
-                loadSound(SOUND_URLS.merge, 'merge'),
-                loadSound(SOUND_URLS.gameOver, 'gameOver')
-            ]);
-            
-            audioInitialized = true;
-            
-            // Hide the start screen and initialize the game
-            startScreen.style.display = 'none';
-            initializeGame();
-            console.log("Web Audio API initialized and game started.");
-        }
-        
-        // --- Image Map (Unchanged) ---
+        // ------------------------
+        // Image map (tiles)
+        // ------------------------
         const IMAGE_MAP = {
             2: "tile_2.png", 4: "tile_4.png", 8: "tile_8.png", 16: "tile_16.png",
             32: "tile_32.png", 64: "tile_64.png", 128: "tile_128.png", 256: "tile_256.png",
@@ -435,11 +430,15 @@
             return IMAGE_MAP[value] || ''; 
         }
 
-        // --- High Score Logic (Unchanged) ---
+        // ------------------------
+        // High score
+        // ------------------------
         function loadHighScore() {
             const storedScore = localStorage.getItem('storkMergeHighScore');
             if (storedScore) {
-                highScore = parseInt(storedScore);
+                highScore = parseInt(storedScore, 10);
+            } else {
+                highScore = 0;
             }
             highScoreDisplay.textContent = highScore;
         }
@@ -448,11 +447,14 @@
             localStorage.setItem('storkMergeHighScore', highScore);
         }
 
-        // --- Game Setup ---
+        // ------------------------
+        // Game setup
+        // ------------------------
         function initializeGame() {
             board = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
             score = 0;
             isGameOver = false;
+            mergeHappened = false;
             gameOverScreen.style.display = 'none';
 
             loadHighScore();
@@ -472,7 +474,14 @@
             updateBoardUI();
         }
 
-        // --- Core Logic (Movements, Merges, Updates) ---
+        // ------------------------
+        // Movement & merge logic
+        // ------------------------
+        function slide(row) {
+            let arr = row.filter(val => val !== 0);
+            let zeros = Array(GRID_SIZE - arr.length).fill(0);
+            return zeros.concat(arr);
+        }
 
         function merge(row) {
             let initialScore = score;
@@ -487,32 +496,6 @@
                 mergeHappened = true; 
             }
             return row;
-        }
-        
-        function processMove(moveFunction) {
-            if (isGameOver || !audioInitialized) return false; 
-
-            mergeHappened = false; 
-
-            const moved = moveFunction();
-
-            if (moved) {
-                if (mergeHappened) {
-                    playSound('merge'); 
-                } else {
-                    playSound('move'); 
-                }
-                addRandomTile();
-                updateBoardUI();
-                checkGameOver();
-            }
-            return moved;
-        }
-        
-        function slide(row) {
-            let arr = row.filter(val => val !== 0);
-            let zeros = Array(GRID_SIZE - arr.length).fill(0);
-            return zeros.concat(arr);
         }
 
         function moveRight() {
@@ -535,7 +518,7 @@
             let boardChanged = false;
             for (let r = 0; r < GRID_SIZE; r++) {
                 let originalRow = [...board[r]];
-                let row = board[r];
+                let row = [...board[r]];
                 row.reverse();
                 row = slide(row);
                 row = merge(row);
@@ -620,11 +603,9 @@
 
                     if (value !== 0) {
                         const imageUrl = getImageUrl(value);
-                        
                         if (imageUrl) {
                             tileElement.style.backgroundImage = `url('${imageUrl}')`;
                         }
-                        
                         tileElement.classList.add(`tile-${value}`); 
                     }
                 }
@@ -636,7 +617,9 @@
             }
         }
 
-        // --- Game Over Checks ---
+        // ------------------------
+        // Game over checks
+        // ------------------------
         function isBoardFull() {
             for (let r = 0; r < GRID_SIZE; r++) {
                 for (let c = 0; c < GRID_SIZE; c++) {
@@ -676,7 +659,31 @@
             }
         }
 
-        // --- Input Control (Keyboard - Uses processMove) ---
+        // ------------------------
+        // processMove (does not block on sound)
+        // ------------------------
+        function processMove(moveFunction) {
+            if (isGameOver) return false;
+
+            mergeHappened = false; 
+            const moved = moveFunction();
+
+            if (moved) {
+                if (mergeHappened) {
+                    playSound('merge'); 
+                } else {
+                    playSound('move'); 
+                }
+                addRandomTile();
+                updateBoardUI();
+                checkGameOver();
+            }
+            return moved;
+        }
+
+        // ------------------------
+        // Input handlers
+        // ------------------------
         document.addEventListener('keyup', (e) => {
             if (isGameOver) return;
             
@@ -708,7 +715,6 @@
             }
         });
 
-        // --- Mobile Input Control (Buttons - Uses processMove) ---
         mobileControls.addEventListener('click', (e) => {
             if (isGameOver || !e.target.classList.contains('move-btn')) return;
 
@@ -735,7 +741,9 @@
             }
         });
 
-        // --- Restart & Share Controls ---
+        // ------------------------
+        // Restart & Share Controls
+        // ------------------------
         restartButton.addEventListener('click', initializeGame);
         function restartGame() {
             initializeGame();
@@ -744,22 +752,42 @@
         tweetButton.addEventListener('click', () => {
             const gameName = "Stork Merge";
             const message = `I scored ${score} in ${gameName}! 
-            Can you beat my high score of ${highScore}?
-            https://stork-merge-v1.vercel.app/
-            
+Can you beat my high score of ${highScore}?
+https://stork-merge-v1.vercel.app/
+
 #StorkMerge #StorkOracle #Web3Gaming`;
             
             const tweetUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(message)}`;
             window.open(tweetUrl, '_blank');
         });
 
+        // ------------------------
+        // Start button: initialize audio on user action, start game
+        // ------------------------
+        startButton.addEventListener('click', async () => {
+            // ensure AudioContext is created on user gesture
+            ensureAudioContext();
+            try { if (audioContext && audioContext.state === 'suspended') await audioContext.resume(); } catch(e){ /* ignore */ }
+            audioInitialized = true;
+            // hide start screen and start game immediately
+            startScreen.style.display = 'none';
+            initializeGame();
+        });
 
-        // --- Initial Trigger ---
-        // Game must be started via the Start Button click
-        startButton.addEventListener('click', initializeAudioAndStartGame);
+        // Also try to initialize audio on first pointer or keydown to be safer on mobile
+        function firstInteractionHandler() {
+            ensureAudioContext();
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume().catch(()=>{});
+            }
+            window.removeEventListener('pointerdown', firstInteractionHandler);
+            window.removeEventListener('keydown', firstInteractionHandler);
+        }
+        window.addEventListener('pointerdown', firstInteractionHandler);
+        window.addEventListener('keydown', firstInteractionHandler);
 
+        // Load high score initially
+        loadHighScore();
     </script>
 </body>
-
 </html>
-
