@@ -341,7 +341,7 @@
         </div>
         <div>
             <button id="restart-game-btn" onclick="restartGame()">Try Again</button>
-            <button id="tweet-btn">Share Score on X 🐦</button>
+            <button id="tweet-btn">Share Score on X </button>
         </div>
     </div>
 
@@ -743,7 +743,10 @@
         
         tweetButton.addEventListener('click', () => {
             const gameName = "Stork Merge";
-            const message = `I scored ${score} in ${gameName}! Can you beat my high score of ${highScore}? 
+            const message = `I scored ${score} in ${gameName}! 
+            Can you beat my high score of ${highScore}?
+            https://stork-merge-v1.vercel.app/
+            
 #StorkMerge #StorkOracle #Web3Gaming`;
             
             const tweetUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(message)}`;
@@ -757,4 +760,5 @@
 
     </script>
 </body>
+
 </html>
