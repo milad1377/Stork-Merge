@@ -14,8 +14,8 @@
             height: 100%;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Prevents scrolling */
-            position: fixed; /* Locks the page on iOS to prevent bounce */
+            overflow: hidden; 
+            position: fixed; 
             font-family: Arial, sans-serif;
             background-color: #1a1a2e; /* Dark Blue */
             color: #e6e6e6;
@@ -24,7 +24,7 @@
             align-items: center;
             justify-content: center;
             user-select: none;
-            touch-action: none; /* Disables browser gestures like pull-to-refresh */
+            touch-action: none; 
         }
 
         #game-logo {
@@ -32,7 +32,7 @@
             max-width: 150px; 
             height: auto;
             display: block; 
-            flex-shrink: 0; /* Prevents logo from shrinking too much */
+            flex-shrink: 0; 
         }
         @media (max-width: 500px) {
             #game-logo {
@@ -135,7 +135,7 @@
             justify-content: center;
             z-index: 101; 
             text-align: center;
-            overflow: hidden; /* Ensure these screens don't scroll either */
+            overflow: hidden; 
         }
         
         .hidden { display: none !important; }
@@ -151,7 +151,7 @@
         /* Buttons & Inputs */
         button {
             border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;
-            -webkit-tap-highlight-color: transparent; /* Remove blue highlight on mobile tap */
+            -webkit-tap-highlight-color: transparent; 
         }
         .full-btn {
             padding: 15px 30px;
@@ -170,7 +170,7 @@
             padding: 12px; border-radius: 8px; border: 1px solid #3b3b64;
             background: #2c2c54; color: white; font-size: 1.1em;
             text-align: center; margin: 10px 0; width: 250px;
-            -webkit-user-select: text; /* Allow text selection in input */
+            -webkit-user-select: text; 
             user-select: text;
         }
 
@@ -178,20 +178,25 @@
         .panel {
             background: rgba(255,255,255,0.05); padding: 20px; border-radius: 20px;
             border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 400px;
-            max-height: 90vh; /* Ensure panel fits on screen */
+            max-height: 90vh; 
             display: flex;
             flex-direction: column;
+            align-items: center; 
         }
         .copy-box {
             background: #0f0f1a; padding: 10px; border-radius: 5px; font-family: monospace;
             cursor: pointer; margin-bottom: 15px; word-break: break-all; font-size: 0.9em; border: 1px dashed #555;
+            width: 90%;
+        }
+        .player-count-label {
+            width: 100%; text-align: left; color: #aaa; font-size: 0.9em; margin-bottom: 5px;
         }
         .player-list {
-            list-style: none; padding: 0; margin: 15px 0; 
+            list-style: none; padding: 0; margin: 0 0 15px 0; 
             max-height: 200px; 
-            overflow-y: auto; /* Allow scrolling inside the list */
+            overflow-y: auto; 
             text-align: left; width: 100%;
-            touch-action: pan-y; /* Re-enable vertical touch scrolling for this element */
+            touch-action: pan-y; 
             -webkit-overflow-scrolling: touch;
         }
         .player-list li {
@@ -199,6 +204,16 @@
             border-radius: 6px; display: flex; justify-content: space-between; align-items: center;
         }
         .is-host { color: #ffd700; font-size: 0.8em; font-weight: bold; }
+
+        /* Lobby Buttons Wrapper */
+        .lobby-btns {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px; 
+            margin-top: 10px;
+        }
 
         /* --- Controls Info --- */
         #keyboard-info {
@@ -246,7 +261,6 @@
         }
         
         @media (max-height: 700px) and (max-width: 500px) {
-             /* Adjust for very small screens/landscape */
             #start-logo { max-width: 150px; margin-bottom: 10px; }
             .full-btn { margin: 5px; }
         }
@@ -261,7 +275,7 @@
         <h2>Stork Merge</h2>
         
         <button id="start-solo-btn" class="full-btn btn-primary">Start Solo</button>
-        <input type="text" id="playerNameInput" placeholder="Enter Your Discord Username" maxlength="12">
+        <input type="text" id="playerNameInput" placeholder="Enter Discord Username" maxlength="25">
         <button id="start-multi-btn" class="full-btn btn-secondary">Multiplayer</button>
     </div>
 
@@ -271,15 +285,21 @@
             <p style="color:#aaa; font-size:0.9em;">Share this link to invite:</p>
             <div class="copy-box" id="shareLink" onclick="copyLink()">Generating Link...</div>
             
+            <div id="lobby-count" class="player-count-label">Players: 0</div>
+            
             <ul class="player-list" id="lobbyPlayerList"></ul>
             
-            <div id="hostControls" class="hidden">
-                <button id="hostStartBtn" class="full-btn btn-primary" style="background:#00ff99;">Start Match</button>
+            <div class="lobby-btns">
+                <div id="hostControls" class="hidden" style="width: 100%; text-align: center;">
+                    <button id="hostStartBtn" class="full-btn btn-primary" style="background:#00ff99; margin: 0;">Start Match</button>
+                </div>
+                
+                <div id="clientStatus" class="hidden">
+                    <p style="color:#00ff99; animation: pulse 1s infinite; margin: 0;">Waiting for host...</p>
+                </div>
+                
+                <button onclick="leaveLobby()" class="full-btn btn-danger" style="margin: 0;">Leave Lobby</button>
             </div>
-            <div id="clientStatus" class="hidden">
-                <p style="color:#00ff99; animation: pulse 1s infinite;">Waiting for host...</p>
-            </div>
-            <button onclick="leaveLobby()" class="full-btn btn-danger" style="margin-top:10px;">Leave Lobby</button>
         </div>
     </div>
 
@@ -326,7 +346,7 @@
         </div>
 
         <div>
-            <button id="restart-game-btn" class="full-btn btn-primary" style="background:#00ff99;">Play Again</button>
+            <button id="restart-game-btn" class="full-btn btn-primary" style="background:#00ff99;">Main Menu</button>
             <button id="tweet-btn" class="full-btn" style="background:#1DA1F2; color:white;">Share on X</button>
         </div>
     </div>
@@ -704,6 +724,8 @@
                     [playerId]: { name: playerName, score: 0, isHost: true, isDead: false }
                 }
             });
+
+            // NO onDisconnect remove here! Player stays in DB if they close tab.
             
             showLobbyUI();
             listenToLobby();
@@ -749,6 +771,8 @@
                 name: playerName, score: 0, isHost: false, isDead: false
             });
 
+            // NO onDisconnect remove here! Player stays in DB if they close tab.
+
             showLobbyUI();
             listenToLobby();
             joiningInProgress = false;
@@ -779,13 +803,20 @@
                 
                 const list = document.getElementById('lobbyPlayerList');
                 list.innerHTML = '';
+                let playerCount = 0;
+                
                 if(data.players) {
-                    Object.values(data.players).forEach(p => {
+                    const players = Object.values(data.players);
+                    playerCount = players.length;
+                    players.forEach(p => {
                         const li = document.createElement('li');
                         li.innerHTML = `<span>${p.name}</span> ${p.isHost ? '<span class="is-host">HOST</span>' : ''}`;
                         list.appendChild(li);
                     });
                 }
+                
+                // Update Player Count
+                document.getElementById('lobby-count').innerText = `Players: ${playerCount}`;
 
                 if(data.status === 'playing' && !gameContainer.children.length) {
                     initializeGame();
@@ -818,7 +849,7 @@
                     div.className = 'mp-rank-row';
                     let medal = idx===0?'🥇':(idx===1?'🥈':(idx===2?'🥉': `#${idx+1}`));
                     
-                    let statusText = p.isDead ? '(Dead)' : '(Playing)';
+                    let statusText = p.isDead ? '(✅ Final Score)' : '(⏳ Playing ...)';
                     
                     div.innerHTML = `<span>${medal} ${p.name} <span style="font-size:0.8em; color:#aaa;">${statusText}</span></span> <span style="font-weight:bold; color:#00ff99;">${p.score}</span>`;
                     finalContainer.appendChild(div);
@@ -885,8 +916,15 @@
             const link = document.getElementById('shareLink').innerText;
             navigator.clipboard.writeText(link).then(() => alert("Copied!"));
         }
-        window.leaveLobby = function(){
-            if(isHost && roomId) window.dbRemove(window.dbRef(window.db, `rooms/${roomId}`));
+        
+        window.leaveLobby = async function(){
+            if(window.db && roomId) {
+                if(isHost) {
+                    await window.dbRemove(window.dbRef(window.db, `rooms/${roomId}`));
+                } else if(playerId) {
+                    await window.dbRemove(window.dbRef(window.db, `rooms/${roomId}/players/${playerId}`));
+                }
+            }
             window.location.href = window.location.pathname;
         }
 
