@@ -159,7 +159,7 @@
         input[type="text"] {
             padding: 12px; border-radius: 8px; border: 1px solid #3b3b64;
             background: #2c2c54; color: white; font-size: 1.1em;
-            text-align: center; margin-bottom: 15px; width: 250px;
+            text-align: center; margin: 10px 0; width: 250px;
         }
 
         /* --- Lobby Specifics --- */
@@ -179,21 +179,6 @@
             border-radius: 6px; display: flex; justify-content: space-between; align-items: center;
         }
         .is-host { color: #ffd700; font-size: 0.8em; font-weight: bold; }
-
-        /* --- Live Leaderboard (During Game) --- */
-        #live-leaderboard {
-            position: absolute;
-            right: 20px; top: 100px;
-            background: rgba(44, 44, 84, 0.9);
-            padding: 15px; border-radius: 10px;
-            width: 200px;
-            display: none; /* Hidden by default */
-        }
-        #live-leaderboard h3 { margin: 0 0 10px 0; font-size: 1em; color: #00ff99; border-bottom: 1px solid #555; padding-bottom: 5px; }
-        .lb-row { display: flex; justify-content: space-between; font-size: 0.9em; margin-bottom: 5px; }
-        .lb-name { color: #ddd; }
-        .lb-score { font-weight: bold; color: #fff; }
-        .lb-dead { text-decoration: line-through; color: #dc143c; }
 
         /* --- Controls Info --- */
         #keyboard-info {
@@ -229,13 +214,6 @@
         #multiplayer-results { margin-top: 15px; width: 100%; max-width: 300px; display: none; }
         .mp-rank-row { display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding: 5px 0; }
 
-        @media (max-width: 850px) {
-            /* Hide sidebar leaderboard on small screens, maybe show simplified version? */
-            #live-leaderboard {
-                position: static; margin-bottom: 10px; width: 90%; max-width: 440px; display: none;
-            }
-        }
-
         @media (max-width: 500px) {
             #mobile-controls { display: block; }
             #keyboard-info { display: none; }
@@ -248,18 +226,14 @@
 </head>
 <body>
 
-    <div id="live-leaderboard">
-        <h3>Live Ranks</h3>
-        <div id="live-lb-content"></div>
-    </div>
-
     <img id="game-logo" src="logo.png" alt="StorkMerge Logo" onerror="this.style.display='none'">
 
     <div id="start-screen">
         <img id="start-logo" src="start_logo.png" alt="StorkMerge Start Logo" onerror="this.style.display='none'">
         <h2>Stork Merge</h2>
-        <input type="text" id="playerNameInput" placeholder="Enter Nickname" maxlength="12">
+        
         <button id="start-solo-btn" class="full-btn btn-primary">Start Solo</button>
+        <input type="text" id="playerNameInput" placeholder="Enter Nickname" maxlength="12">
         <button id="start-multi-btn" class="full-btn btn-secondary">Multiplayer</button>
     </div>
 
@@ -481,10 +455,9 @@
             
             // Multiplayer UI
             if (isMultiplayer) {
-                document.getElementById('live-leaderboard').style.display = 'block';
+                // Live Leaderboard REMOVED as requested
                 document.getElementById('restart-btn').style.display = 'none'; // No restart in MP until end
             } else {
-                document.getElementById('live-leaderboard').style.display = 'none';
                 document.getElementById('restart-btn').style.display = 'block';
             }
 
@@ -526,8 +499,6 @@
 
         function moveAndCheck(moveFunc) {
             let boardChanged = false;
-            // Logic handled per direction
-            // ... (Simplified reusing your logic below)
             return moveFunc(); 
         }
 
@@ -656,7 +627,7 @@
                         });
                     }
                     // Fetch final leaderboard immediately for view
-                    fetchLeaderboard(true); 
+                    fetchLeaderboard(); 
                 } else {
                     document.getElementById('gameOverTitle').innerText = "Game Over! 😔";
                     document.getElementById('multiplayer-results').style.display = 'none';
@@ -684,8 +655,11 @@
         // --- MULTIPLAYER LOGIC ---
         // ------------------------------------------------------------------
 
-        function getPlayerName(){
+        function getPlayerName(isForMultiplayer = false){
             let name = playerNameInput.value.trim();
+            if (isForMultiplayer && !name) {
+                return null; // Force name for MP
+            }
             if(!name) name = "Stork_" + Math.floor(Math.random()*1000);
             return name;
         }
@@ -693,11 +667,19 @@
         async function createLobby(){
             if(joiningInProgress) return;
             if(!window.db) { alert("Firebase not loaded yet."); return; }
+            
+            // STRICT NAME CHECK FOR HOST
+            playerName = getPlayerName(true);
+            if (!playerName) {
+                alert("Please enter a nickname to Create a Lobby!");
+                playerNameInput.focus();
+                return;
+            }
+
             joiningInProgress = true;
             
             startMultiBtn.disabled = true; startMultiBtn.innerText = "Creating...";
 
-            playerName = getPlayerName();
             playerId = 'host_' + Date.now();
             roomId = 'room_' + Math.floor(Math.random()*10000);
             isHost = true;
@@ -720,10 +702,17 @@
             if(joiningInProgress) return;
             if(!window.db) { alert("Firebase not loaded."); return; }
             if(!roomId) return;
+            
+            // STRICT NAME CHECK FOR JOIN
+            playerName = getPlayerName(true);
+            if (!playerName) {
+                alert("Please enter a nickname to Join!");
+                playerNameInput.focus();
+                return;
+            }
+
             joiningInProgress = true;
             startMultiBtn.disabled = true; startMultiBtn.innerText = "Joining...";
-
-            playerName = getPlayerName();
 
             // Duplicate Name Check
             try {
@@ -793,7 +782,7 @@
                 if(data.status === 'playing' && !gameContainer.children.length) {
                     // Game started by host
                     initializeGame();
-                    fetchLeaderboard(false); // Start live ranking
+                    fetchLeaderboard(); // Prepare leaderboard listener (but only display on game over)
                 }
             });
         }
@@ -808,35 +797,27 @@
             window.dbUpdate(window.dbRef(window.db, `rooms/${roomId}/players/${playerId}`), { score: score });
         }
 
-        function fetchLeaderboard(isFinal = false){
+        function fetchLeaderboard(){
             const playersRef = window.dbRef(window.db, `rooms/${roomId}/players`);
             window.dbOnValue(playersRef, (snapshot) => {
                 const players = snapshot.val();
                 if(!players) return;
                 const sorted = Object.values(players).sort((a,b) => b.score - a.score);
 
-                // Update Side Leaderboard (Live)
-                const liveContainer = document.getElementById('live-lb-content');
-                liveContainer.innerHTML = '';
-                sorted.forEach(p => {
+                // Update Final Results (Only visible in Game Over screen)
+                const finalContainer = document.getElementById('mp-results-content');
+                finalContainer.innerHTML = '';
+                sorted.forEach((p, idx) => {
                     const div = document.createElement('div');
-                    div.className = 'lb-row';
-                    div.innerHTML = `<span class="lb-name ${p.isDead ? 'lb-dead' : ''}">${p.name}</span><span class="lb-score">${p.score}</span>`;
-                    liveContainer.appendChild(div);
+                    div.className = 'mp-rank-row';
+                    let medal = idx===0?'🥇':(idx===1?'🥈':(idx===2?'🥉': `#${idx+1}`));
+                    
+                    // Logic to show "Playing" if not dead
+                    let statusText = p.isDead ? '(Dead)' : '(Playing)';
+                    
+                    div.innerHTML = `<span>${medal} ${p.name} <span style="font-size:0.8em; color:#aaa;">${statusText}</span></span> <span style="font-weight:bold; color:#00ff99;">${p.score}</span>`;
+                    finalContainer.appendChild(div);
                 });
-
-                // Update Final Results (Game Over)
-                if(isFinal || document.getElementById('multiplayer-results').style.display === 'block') {
-                    const finalContainer = document.getElementById('mp-results-content');
-                    finalContainer.innerHTML = '';
-                    sorted.forEach((p, idx) => {
-                        const div = document.createElement('div');
-                        div.className = 'mp-rank-row';
-                        let medal = idx===0?'🥇':(idx===1?'🥈':(idx===2?'🥉': `#${idx+1}`));
-                        div.innerHTML = `<span>${medal} ${p.name} ${p.isDead?'(Dead)':''}</span> <span style="font-weight:bold; color:#00ff99;">${p.score}</span>`;
-                        finalContainer.appendChild(div);
-                    });
-                }
             });
         }
 
@@ -865,17 +846,17 @@
         });
 
         // Button Listeners
-        startSoloBtn.onclick = () => { isMultiplayer=false; initializeGame(); };
+        startSoloBtn.onclick = () => { 
+            playerName = getPlayerName(false); // Optional name for solo
+            isMultiplayer=false; 
+            initializeGame(); 
+        };
         startMultiBtn.onclick = () => {
             if(roomId) joinLobby(); else createLobby();
         };
         hostStartBtn.onclick = startMultiplayerGame;
         restartButton.onclick = () => { if(!isMultiplayer) initializeGame(); };
         restartGameBtn.onclick = () => {
-            if(isMultiplayer && isHost && window.db) {
-                // Host clears room? Or just redirect? For now, redirect.
-                // window.dbRemove(window.dbRef(window.db, `rooms/${roomId}`));
-            }
             window.location.href = window.location.pathname; 
         };
 
