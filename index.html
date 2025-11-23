@@ -2,14 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content" />
     <title>Stork Merge - Multiplayer</title>
     <style>
         /* ------------------------------------------------------------------ */
         /* --- CSS: Styles and Theme (StorkMerge) --- */
         /* ------------------------------------------------------------------ */
 
-        body {
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevents scrolling */
+            position: fixed; /* Locks the page on iOS to prevent bounce */
             font-family: Arial, sans-serif;
             background-color: #1a1a2e; /* Dark Blue */
             color: #e6e6e6;
@@ -17,22 +23,21 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            margin: 0;
             user-select: none;
-            overflow-x: hidden;
+            touch-action: none; /* Disables browser gestures like pull-to-refresh */
         }
 
         #game-logo {
-            margin-bottom: 20px; 
-            max-width: 180px; 
+            margin-bottom: 10px; 
+            max-width: 150px; 
             height: auto;
             display: block; 
+            flex-shrink: 0; /* Prevents logo from shrinking too much */
         }
         @media (max-width: 500px) {
             #game-logo {
-                max-width: 120px; 
-                margin-top: 15px; 
+                max-width: 100px; 
+                margin-top: 10px; 
             }
         }
 
@@ -41,7 +46,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            flex-shrink: 0;
         }
         #score-info {
             display: flex;
@@ -49,26 +55,26 @@
         }
         .score-box {
             background-color: #2c2c54;
-            padding: 10px 15px;
+            padding: 8px 12px;
             border-radius: 8px;
             font-size: 1em;
             text-align: center;
         }
         .score-label {
-            font-size: 0.8em;
+            font-size: 0.7em;
             color: #ccc;
         }
         .score-value {
             font-weight: bold;
-            font-size: 1.2em;
+            font-size: 1.1em;
         }
         #restart-btn {
-            padding: 10px 15px;
+            padding: 8px 12px;
             background-color: #00ff99; 
             color: #1a1a2e;
             border: none;
             border-radius: 5px;
-            font-size: 1em;
+            font-size: 0.9em;
             cursor: pointer;
             font-weight: bold;
             transition: background-color 0.2s;
@@ -85,6 +91,7 @@
             grid-template-rows: repeat(4, 100px);
             gap: 10px;
             position: relative;
+            flex-shrink: 0;
         }
         .tile {
             width: 100px;
@@ -128,27 +135,30 @@
             justify-content: center;
             z-index: 101; 
             text-align: center;
+            overflow: hidden; /* Ensure these screens don't scroll either */
         }
         
         .hidden { display: none !important; }
 
         #start-logo {
-            margin-bottom: 30px; 
-            max-width: 250px; 
+            margin-bottom: 20px; 
+            max-width: 200px; 
             height: auto;
             display: block;
         }
-        h2 { color: #00ff99; margin-bottom: 20px; }
+        h2 { color: #00ff99; margin-bottom: 15px; }
 
         /* Buttons & Inputs */
         button {
             border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;
+            -webkit-tap-highlight-color: transparent; /* Remove blue highlight on mobile tap */
         }
         .full-btn {
             padding: 15px 30px;
             font-size: 1.2em;
-            margin: 10px;
+            margin: 8px;
             width: 280px;
+            max-width: 80%;
         }
         .btn-primary { background-color: #ffeb3b; color: #1a1a2e; }
         .btn-secondary { background-color: #00bfff; color: white; }
@@ -160,19 +170,29 @@
             padding: 12px; border-radius: 8px; border: 1px solid #3b3b64;
             background: #2c2c54; color: white; font-size: 1.1em;
             text-align: center; margin: 10px 0; width: 250px;
+            -webkit-user-select: text; /* Allow text selection in input */
+            user-select: text;
         }
 
         /* --- Lobby Specifics --- */
         .panel {
-            background: rgba(255,255,255,0.05); padding: 30px; border-radius: 20px;
+            background: rgba(255,255,255,0.05); padding: 20px; border-radius: 20px;
             border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 400px;
+            max-height: 90vh; /* Ensure panel fits on screen */
+            display: flex;
+            flex-direction: column;
         }
         .copy-box {
             background: #0f0f1a; padding: 10px; border-radius: 5px; font-family: monospace;
             cursor: pointer; margin-bottom: 15px; word-break: break-all; font-size: 0.9em; border: 1px dashed #555;
         }
         .player-list {
-            list-style: none; padding: 0; margin: 15px 0; max-height: 200px; overflow-y: auto; text-align: left; width: 100%;
+            list-style: none; padding: 0; margin: 15px 0; 
+            max-height: 200px; 
+            overflow-y: auto; /* Allow scrolling inside the list */
+            text-align: left; width: 100%;
+            touch-action: pan-y; /* Re-enable vertical touch scrolling for this element */
+            -webkit-overflow-scrolling: touch;
         }
         .player-list li {
             background: rgba(255,255,255,0.1); padding: 10px; margin-bottom: 5px;
@@ -187,18 +207,20 @@
         }
 
         #mobile-controls {
-            display: none; margin-top: 25px; width: 350px; text-align: center;
+            display: none; margin-top: 20px; width: 350px; text-align: center;
+            flex-shrink: 0;
         }
         .mobile-dpad {
             display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr;
-            gap: 10px; margin: 0 auto; width: 250px; 
+            gap: 8px; margin: 0 auto; width: 240px; 
         }
         .move-btn {
-            padding: 20px; background-color: #00ff99; color: #1a1a2e;
+            padding: 0; background-color: #00ff99; color: #1a1a2e;
             border: none; border-radius: 5px; font-size: 1.8em; font-weight: bold;
-            cursor: pointer; text-align: center; height: 60px; 
+            cursor: pointer; text-align: center; height: 55px;
+            display: flex; align-items: center; justify-content: center;
         }
-        .move-btn:active { background-color: #00cc77; }
+        .move-btn:active { background-color: #00cc77; transform: scale(0.95); }
         .move-btn[data-direction="up"] { grid-column: 2; grid-row: 1; }
         .move-btn[data-direction="left"] { grid-column: 1; grid-row: 2; }
         .move-btn[data-direction="right"] { grid-column: 3; grid-row: 2; }
@@ -217,10 +239,16 @@
         @media (max-width: 500px) {
             #mobile-controls { display: block; }
             #keyboard-info { display: none; }
-            #game-header { width: 90%; margin-top: 20px; }
-            #game-container { grid-template-columns: repeat(4, 85px); grid-template-rows: repeat(4, 85px); }
-            .tile { width: 85px; height: 85px; }
-            .full-btn { width: 100%; }
+            #game-header { width: 90%; margin-top: 10px; margin-bottom: 10px; }
+            #game-container { grid-template-columns: repeat(4, 75px); grid-template-rows: repeat(4, 75px); gap: 5px; padding: 5px; }
+            .tile { width: 75px; height: 75px; }
+            .full-btn { width: 100%; padding: 12px; }
+        }
+        
+        @media (max-height: 700px) and (max-width: 500px) {
+             /* Adjust for very small screens/landscape */
+            #start-logo { max-width: 150px; margin-bottom: 10px; }
+            .full-btn { margin: 5px; }
         }
     </style>
 </head>
@@ -233,7 +261,7 @@
         <h2>Stork Merge</h2>
         
         <button id="start-solo-btn" class="full-btn btn-primary">Start Solo</button>
-        <input type="text" id="playerNameInput" placeholder="Enter Nickname" maxlength="12">
+        <input type="text" id="playerNameInput" placeholder="Enter Your Discord Username" maxlength="12">
         <button id="start-multi-btn" class="full-btn btn-secondary">Multiplayer</button>
     </div>
 
@@ -321,7 +349,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Export to window for global access
         window.db = db;
         window.dbRef = ref;
         window.dbSet = set;
@@ -345,11 +372,9 @@
         const mobileControls = document.getElementById('mobile-controls');
         const tweetButton = document.getElementById('tweet-btn'); 
         
-        // Screens
         const startScreen = document.getElementById('start-screen'); 
         const lobbyScreen = document.getElementById('lobby-screen');
 
-        // Inputs & Buttons
         const playerNameInput = document.getElementById('playerNameInput');
         const startSoloBtn = document.getElementById('start-solo-btn');
         const startMultiBtn = document.getElementById('start-multi-btn');
@@ -370,7 +395,6 @@
         let isHost = false;
         let joiningInProgress = false;
 
-        // Check URL for Room
         const urlParams = new URLSearchParams(window.location.search);
         if(urlParams.get('room')){
             roomId = urlParams.get('room');
@@ -448,15 +472,12 @@
             isGameOver = false;
             mergeHappened = false;
             
-            // UI Resets
             gameOverScreen.classList.add('hidden');
             startScreen.classList.add('hidden');
             lobbyScreen.classList.add('hidden');
             
-            // Multiplayer UI
             if (isMultiplayer) {
-                // Live Leaderboard REMOVED as requested
-                document.getElementById('restart-btn').style.display = 'none'; // No restart in MP until end
+                document.getElementById('restart-btn').style.display = 'none';
             } else {
                 document.getElementById('restart-btn').style.display = 'block';
             }
@@ -495,11 +516,6 @@
             }
             if (score > initialScore) mergeHappened = true; 
             return row;
-        }
-
-        function moveAndCheck(moveFunc) {
-            let boardChanged = false;
-            return moveFunc(); 
         }
 
         function moveRight() {
@@ -581,7 +597,6 @@
                 highScoreDisplay.textContent = highScore;
             }
 
-            // Sync Score in Multiplayer
             if (isMultiplayer) syncScore();
         }
 
@@ -616,7 +631,6 @@
                 document.getElementById('final-score-value').textContent = score;
                 document.getElementById('final-high-score-value').textContent = highScore; 
 
-                // Multiplayer specific Game Over Logic
                 if (isMultiplayer) {
                     document.getElementById('gameOverTitle').innerText = "Finished";
                     document.getElementById('multiplayer-results').style.display = 'block';
@@ -626,7 +640,6 @@
                             isDead: true 
                         });
                     }
-                    // Fetch final leaderboard immediately for view
                     fetchLeaderboard(); 
                 } else {
                     document.getElementById('gameOverTitle').innerText = "Game Over! 😔";
@@ -658,7 +671,7 @@
         function getPlayerName(isForMultiplayer = false){
             let name = playerNameInput.value.trim();
             if (isForMultiplayer && !name) {
-                return null; // Force name for MP
+                return null;
             }
             if(!name) name = "Stork_" + Math.floor(Math.random()*1000);
             return name;
@@ -668,10 +681,9 @@
             if(joiningInProgress) return;
             if(!window.db) { alert("Firebase not loaded yet."); return; }
             
-            // STRICT NAME CHECK FOR HOST
             playerName = getPlayerName(true);
             if (!playerName) {
-                alert("Please enter a nickname to Create a Lobby!");
+                alert("Please enter a Username to Create a Lobby!");
                 playerNameInput.focus();
                 return;
             }
@@ -703,10 +715,9 @@
             if(!window.db) { alert("Firebase not loaded."); return; }
             if(!roomId) return;
             
-            // STRICT NAME CHECK FOR JOIN
             playerName = getPlayerName(true);
             if (!playerName) {
-                alert("Please enter a nickname to Join!");
+                alert("Please enter a Username to Join!");
                 playerNameInput.focus();
                 return;
             }
@@ -714,7 +725,6 @@
             joiningInProgress = true;
             startMultiBtn.disabled = true; startMultiBtn.innerText = "Joining...";
 
-            // Duplicate Name Check
             try {
                 const roomPlayersRef = window.dbRef(window.db, `rooms/${roomId}/players`);
                 const snapshot = await window.dbGet(roomPlayersRef);
@@ -722,7 +732,7 @@
                     const players = snapshot.val();
                     const isNameTaken = Object.values(players).some(p => p.name.toLowerCase() === playerName.toLowerCase());
                     if (isNameTaken) {
-                        alert("Name already taken in this room!");
+                        alert("Username already taken in this room!");
                         joiningInProgress = false;
                         startMultiBtn.disabled = false; startMultiBtn.innerText = "Join Lobby";
                         return;
@@ -763,11 +773,10 @@
             window.dbOnValue(roomRef, (snapshot) => {
                 const data = snapshot.val();
                 if(!data) {
-                    if(isGameOver) return; // Don't redirect if viewing game over
+                    if(isGameOver) return; 
                     alert("Room closed."); window.location.href = window.location.pathname; return;
                 }
                 
-                // Update Player List in Lobby
                 const list = document.getElementById('lobbyPlayerList');
                 list.innerHTML = '';
                 if(data.players) {
@@ -778,11 +787,9 @@
                     });
                 }
 
-                // Check Game Start
                 if(data.status === 'playing' && !gameContainer.children.length) {
-                    // Game started by host
                     initializeGame();
-                    fetchLeaderboard(); // Prepare leaderboard listener (but only display on game over)
+                    fetchLeaderboard(); 
                 }
             });
         }
@@ -804,7 +811,6 @@
                 if(!players) return;
                 const sorted = Object.values(players).sort((a,b) => b.score - a.score);
 
-                // Update Final Results (Only visible in Game Over screen)
                 const finalContainer = document.getElementById('mp-results-content');
                 finalContainer.innerHTML = '';
                 sorted.forEach((p, idx) => {
@@ -812,7 +818,6 @@
                     div.className = 'mp-rank-row';
                     let medal = idx===0?'🥇':(idx===1?'🥈':(idx===2?'🥉': `#${idx+1}`));
                     
-                    // Logic to show "Playing" if not dead
                     let statusText = p.isDead ? '(Dead)' : '(Playing)';
                     
                     div.innerHTML = `<span>${medal} ${p.name} <span style="font-size:0.8em; color:#aaa;">${statusText}</span></span> <span style="font-weight:bold; color:#00ff99;">${p.score}</span>`;
@@ -837,17 +842,28 @@
         });
 
         mobileControls.addEventListener('click', (e) => {
-            if (isGameOver || !e.target.classList.contains('move-btn')) return;
-            const dir = e.target.getAttribute('data-direction');
+            if (isGameOver || !e.target.classList.contains('move-btn') && !e.target.parentElement.classList.contains('move-btn')) return;
+            
+            // Handle clicking icon vs button itself
+            let target = e.target;
+            if(!target.classList.contains('move-btn')) target = target.parentElement;
+
+            const dir = target.getAttribute('data-direction');
             let mf = null;
             if(dir==='left') mf=moveLeft; else if(dir==='right') mf=moveRight;
             else if(dir==='up') mf=moveUp; else if(dir==='down') mf=moveDown;
             if(mf) processMove(mf);
         });
+        
+        // Prevent default touch moves to stop scrolling on body
+        document.body.addEventListener('touchmove', function(e) {
+            if (!e.target.closest('.player-list')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
 
-        // Button Listeners
         startSoloBtn.onclick = () => { 
-            playerName = getPlayerName(false); // Optional name for solo
+            playerName = getPlayerName(false); 
             isMultiplayer=false; 
             initializeGame(); 
         };
@@ -865,7 +881,6 @@
             window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(msg)}`, '_blank');
         });
 
-        // Helpers
         window.copyLink = function(){
             const link = document.getElementById('shareLink').innerText;
             navigator.clipboard.writeText(link).then(() => alert("Copied!"));
