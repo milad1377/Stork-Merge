@@ -1,362 +1,292 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    
     <link rel="icon" type="image/png" href="tab.png">
 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content" />
     <title>Stork Merge</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+
     <style>
         /* ------------------------------------------------------------------ */
-        /* --- CSS: Styles and Theme (StorkMerge) --- */
+        /* --- CSS: Professional Theme (Sky & Glass) --- */
         /* ------------------------------------------------------------------ */
 
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.15);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --text-color: #ffffff;
+            --accent-color: #00ff99;
+            --tile-radius: 8px;
+        }
+
         html, body {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden; 
-            position: fixed; 
-            font-family: Arial, sans-serif;
-            background-color: #1a1a2e; /* Dark Blue */
-            color: #e6e6e6;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            user-select: none;
-            touch-action: none; 
+            width: 100%; height: 100%; margin: 0; padding: 0;
+            overflow: hidden; position: fixed;
+            font-family: 'Fredoka', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-color);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            user-select: none; touch-action: none;
         }
 
+        /* Animated Background Canvas */
+        #canvas-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; pointer-events: none;
+        }
+
+        /* Logo with Glow */
         #game-logo {
-            margin-bottom: 10px; 
-            max-width: 150px; 
-            height: auto;
-            display: block; 
-            flex-shrink: 0; 
+            margin-bottom: 15px; max-width: 140px; height: auto;
+            filter: drop-shadow(0 0 10px rgba(0, 255, 153, 0.4));
+            transition: transform 0.3s;
         }
-        @media (max-width: 500px) {
-            #game-logo {
-                max-width: 100px; 
-                margin-top: 10px; 
-            }
-        }
+        #game-logo:hover { transform: scale(1.05) rotate(2deg); }
 
+        /* Game Header */
         #game-header {
-            width: 440px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            flex-shrink: 0;
+            width: 450px; display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 20px; z-index: 10;
         }
-        #score-info {
-            display: flex;
-            gap: 15px;
-        }
-        .score-box {
-            background-color: #2c2c54;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 1em;
-            text-align: center;
-        }
-        .score-label {
-            font-size: 0.7em;
-            color: #ccc;
-        }
-        .score-value {
-            font-weight: bold;
-            font-size: 1.1em;
-        }
-        #restart-btn {
-            padding: 8px 12px;
-            background-color: #00ff99; 
-            color: #1a1a2e;
-            border: none;
-            border-radius: 5px;
-            font-size: 0.9em;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.2s;
-        }
-        #restart-btn:hover { background-color: #00cc77; }
+        h1 { margin: 0; font-size: 2em; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
 
+        /* Glass Score Boxes */
+        #score-info { display: flex; gap: 15px; }
+        .score-box {
+            background: var(--glass-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: var(--glass-border);
+            padding: 8px 15px; border-radius: 12px;
+            text-align: center; min-width: 70px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .score-label { font-size: 0.75em; color: #ddd; text-transform: uppercase; letter-spacing: 1px; }
+        .score-value { font-weight: 700; font-size: 1.3em; color: var(--accent-color); }
+
+        /* Restart Button */
+        #restart-btn {
+            padding: 10px 20px; background: linear-gradient(45deg, #00b09b, #96c93d);
+            color: white; border: none; border-radius: 25px;
+            font-family: 'Fredoka', sans-serif; font-weight: 600;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(0, 255, 153, 0.3);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        #restart-btn:active { transform: scale(0.95); }
+
+        /* Main Game Container */
         #game-container {
-            background-color: #2c2c54;
-            border-radius: 8px;
-            padding: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            background: rgba(20, 20, 35, 0.6);
+            backdrop-filter: blur(10px);
+            border: var(--glass-border);
+            border-radius: 15px; padding: 10px;
+            box-shadow: var(--glass-shadow);
             display: grid;
             grid-template-columns: repeat(4, 100px);
             grid-template-rows: repeat(4, 100px);
-            gap: 10px;
-            position: relative;
-            flex-shrink: 0;
+            gap: 12px; position: relative; z-index: 5;
         }
+
+        /* Tile Styles */
         .tile {
-            width: 100px;
-            height: 100px;
-            background-color: #3b3b64;
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0; 
-            transition: 0.1s ease-in-out; 
+            width: 100px; height: 100px;
+            background-color: rgba(255,255,255,0.05);
+            border-radius: var(--tile-radius);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.5em; font-weight: 700; color: #fff;
             position: relative;
-            user-select: none;
-            background-size: 90%; 
-            background-repeat: no-repeat;
-            background-position: center;
-        }
-
-        .tile-2 { background-color: #6a6a99; }
-        .tile-4 { background-color: #8a8ac2; }
-        .tile-8 { background-color: #a9a9ed; }
-        .tile-16 { background-color: #c8c8ff; }
-        .tile-32 { background-color: #00ff99; }
-        .tile-64 { background-color: #00bfff; }
-        .tile-128 { background-color: #ffeb3b; } 
-        .tile-256 { background-color: #ff9900; }
-        .tile-512 { background-color: #ff4500; }
-        .tile-1024 { background-color: #dc143c; }
-        .tile-2048 { background-color: #8b0000; } 
-        .tile-4096 { background-color: #6a0dad; }
-
-        /* --- Screens: Start, Lobby, Game Over --- */
-        #start-screen, #lobby-screen, #game-over-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(26, 26, 46, 0.98); 
-            color: white;
-            display: flex; 
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 101; 
-            text-align: center;
-            overflow: hidden; 
+            background-size: cover; background-position: center;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.27), background-color 0.2s;
         }
         
+        /* Pop Animation */
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); filter: brightness(1.3); }
+            100% { transform: scale(1); }
+        }
+        .tile-pop { animation: pop 0.2s ease-in-out; }
+
+        /* Tile Colors (Fallback if images fail) */
+        .tile-2 { background-color: #eee4da; color: #776e65; }
+        .tile-4 { background-color: #ede0c8; color: #776e65; }
+        .tile-8 { background-color: #f2b179; }
+        .tile-16 { background-color: #f59563; }
+        .tile-32 { background-color: #f67c5f; }
+        .tile-64 { background-color: #f65e3b; }
+        .tile-128 { background-color: #edcf72; box-shadow: 0 0 10px #edcf72; }
+        .tile-256 { background-color: #edcc61; box-shadow: 0 0 15px #edcc61; }
+        .tile-512 { background-color: #edc850; box-shadow: 0 0 20px #edc850; }
+        .tile-1024 { background-color: #edc53f; box-shadow: 0 0 25px #edc53f; }
+        .tile-2048 { background-color: #edc22e; box-shadow: 0 0 30px #edc22e; }
+
+        /* Menus (Dark Glass) */
+        #start-screen, #lobby-screen, #game-over-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 32, 39, 0.92);
+            backdrop-filter: blur(15px);
+            z-index: 100; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center;
+        }
         .hidden { display: none !important; }
 
-        #start-logo {
-            margin-bottom: 20px; 
-            max-width: 200px; 
-            height: auto;
-            display: block;
-        }
-        h2 { color: #00ff99; margin-bottom: 15px; }
+        h2 { color: var(--accent-color); font-size: 2.2em; margin-bottom: 20px; }
 
-        /* Buttons & Inputs */
+        /* Buttons */
         button {
-            border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;
-            -webkit-tap-highlight-color: transparent; 
+            border: none; border-radius: 12px; font-weight: 700; cursor: pointer;
+            font-family: 'Fredoka', sans-serif; transition: 0.2s;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
         }
+        button:active { transform: translateY(4px); box-shadow: none; }
+        
         .full-btn {
-            padding: 15px 30px;
-            font-size: 1.2em;
-            margin: 8px;
-            width: 280px;
-            max-width: 80%;
+            padding: 15px 30px; font-size: 1.1em; margin: 10px; width: 260px;
+            text-transform: uppercase; letter-spacing: 1px;
         }
-        .btn-primary { background-color: #ffeb3b; color: #1a1a2e; }
-        .btn-secondary { background-color: #00bfff; color: white; }
-        .btn-danger { background-color: #dc143c; color: white; }
-        button:hover { opacity: 0.8; transform: scale(1.02); }
-        button:disabled { background-color: #555; color: #888; cursor: not-allowed; transform: none; }
+        .btn-primary { background: #ffeb3b; color: #333; }
+        .btn-secondary { background: #00c6ff; color: white; }
+        .btn-danger { background: #ff416c; color: white; }
 
         input[type="text"] {
-            padding: 12px; border-radius: 8px; border: 1px solid #3b3b64;
-            background: #2c2c54; color: white; font-size: 1.1em;
-            text-align: center; margin: 10px 0; width: 250px;
-            -webkit-user-select: text; 
-            user-select: text;
+            padding: 15px; border-radius: 10px; border: 2px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3); color: white; font-size: 1.2em;
+            text-align: center; margin: 15px 0; outline: none; font-family: 'Fredoka', sans-serif;
+            transition: border-color 0.3s;
         }
+        input[type="text"]:focus { border-color: var(--accent-color); }
 
-        /* --- Lobby Specifics --- */
-        .panel {
-            background: rgba(255,255,255,0.05); padding: 20px; border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 400px;
-            max-height: 90vh; 
-            display: flex;
-            flex-direction: column;
-            align-items: center; 
-        }
-        .copy-box {
-            background: #0f0f1a; padding: 10px; border-radius: 5px; font-family: monospace;
-            cursor: pointer; margin-bottom: 15px; word-break: break-all; font-size: 0.9em; border: 1px dashed #555;
-            width: 90%;
-        }
-        .player-count-label {
-            width: 100%; text-align: left; color: #aaa; font-size: 0.9em; margin-bottom: 5px;
-        }
-        .player-list {
-            list-style: none; padding: 0; margin: 0 0 15px 0; 
-            max-height: 200px; 
-            overflow-y: auto; 
-            text-align: left; width: 100%;
-            touch-action: pan-y; 
-            -webkit-overflow-scrolling: touch;
-        }
-        .player-list li {
-            background: rgba(255,255,255,0.1); padding: 10px; margin-bottom: 5px;
-            border-radius: 6px; display: flex; justify-content: space-between; align-items: center;
-        }
-        .is-host { color: #ffd700; font-size: 0.8em; font-weight: bold; }
-
-        /* Lobby Buttons Wrapper */
-        .lobby-btns {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px; 
-            margin-top: 10px;
-        }
-
-        /* --- Controls Info --- */
-        #keyboard-info {
-            margin-top: 15px; padding: 10px; background-color: #2c2c54;
-            border-radius: 5px; font-size: 0.9em; text-align: center; width: 420px;
-        }
-
-        #mobile-controls {
-            display: none; margin-top: 20px; width: 350px; text-align: center;
-            flex-shrink: 0;
-        }
+        /* Mobile Controls */
+        #mobile-controls { display: none; margin-top: 25px; flex-shrink: 0; }
         .mobile-dpad {
-            display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr;
-            gap: 8px; margin: 0 auto; width: 240px; 
+            display: grid; grid-template-columns: 60px 60px 60px; gap: 8px;
+            justify-content: center;
         }
         .move-btn {
-            padding: 0; background-color: #00ff99; color: #1a1a2e;
-            border: none; border-radius: 5px; font-size: 1.8em; font-weight: bold;
-            cursor: pointer; text-align: center; height: 55px;
+            width: 60px; height: 60px; border-radius: 50%;
+            background: rgba(255,255,255,0.15); color: white; font-size: 1.5em;
             display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(5px); box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
-        .move-btn:active { background-color: #00cc77; transform: scale(0.95); }
-        .move-btn[data-direction="up"] { grid-column: 2; grid-row: 1; }
-        .move-btn[data-direction="left"] { grid-column: 1; grid-row: 2; }
-        .move-btn[data-direction="right"] { grid-column: 3; grid-row: 2; }
-        .move-btn[data-direction="down"] { grid-column: 2; grid-row: 2; }
+        .move-btn:active { background: var(--accent-color); color: #000; }
 
-        /* --- Game Over --- */
-        #final-score-details { margin: 20px 0; padding: 15px 30px; background-color: #2c2c54; border-radius: 10px; }
-        .final-score-line { margin: 10px 0; font-size: 1em; }
-        .final-score-value { color: #00ff99; font-size: 1.5em; font-weight: bold; }
-        .final-score-line.high-score { color: #ffeb3b; }
-
-        /* --- Multiplayer Results --- */
-        #multiplayer-results { margin-top: 15px; width: 100%; max-width: 300px; display: none; }
-        .mp-rank-row { display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding: 5px 0; }
-
+        /* Responsive */
         @media (max-width: 500px) {
+            #game-header { width: 90%; }
+            #game-container {
+                grid-template-columns: repeat(4, 75px);
+                grid-template-rows: repeat(4, 75px);
+                gap: 8px; padding: 8px;
+            }
+            .tile { width: 75px; height: 75px; font-size: 1.8em; }
             #mobile-controls { display: block; }
             #keyboard-info { display: none; }
-            #game-header { width: 90%; margin-top: 10px; margin-bottom: 10px; }
-            #game-container { grid-template-columns: repeat(4, 75px); grid-template-rows: repeat(4, 75px); gap: 5px; padding: 5px; }
-            .tile { width: 75px; height: 75px; }
-            .full-btn { width: 100%; padding: 12px; }
-        }
-        
-        @media (max-height: 700px) and (max-width: 500px) {
-            #start-logo { max-width: 150px; margin-bottom: 10px; }
-            .full-btn { margin: 5px; }
+            h1 { font-size: 1.5em; }
         }
     </style>
 </head>
 <body>
 
-    <img id="game-logo" src="logo.png" alt="StorkMerge Logo" onerror="this.style.display='none'">
+    <canvas id="canvas-bg"></canvas>
+
+    <img id="game-logo" src="logo.png" alt="StorkMerge" onerror="this.style.display='none'">
 
     <div id="start-screen">
-        <img id="start-logo" src="start_logo.png" alt="StorkMerge Start Logo" onerror="this.style.display='none'">
+        <img id="start-logo" src="start_logo.png" alt="" style="max-width:180px; margin-bottom:15px;" onerror="this.style.display='none'">
         <h2>Stork Merge</h2>
-        
+        <input type="text" id="playerNameInput" placeholder="Username (Discord)" maxlength="20">
         <button id="start-solo-btn" class="full-btn btn-primary">Start Solo</button>
-        <input type="text" id="playerNameInput" placeholder="Enter Discord Username" maxlength="25">
         <button id="start-multi-btn" class="full-btn btn-secondary">Multiplayer</button>
     </div>
 
     <div id="lobby-screen" class="hidden">
-        <div class="panel">
-            <h2>Game Lobby</h2>
-            <p style="color:#aaa; font-size:0.9em;">Share this link to invite:</p>
-            <div class="copy-box" id="shareLink" onclick="copyLink()">Generating Link...</div>
+        <div style="background: rgba(0,0,0,0.5); padding:30px; border-radius:20px; border:1px solid rgba(255,255,255,0.1); width: 90%; max-width:400px;">
+            <h2 style="margin-top:0;">Game Lobby</h2>
+            <p style="color:#aaa; font-size:0.9em;">Invite Link:</p>
+            <div id="shareLink" onclick="copyLink()" style="background:#222; padding:10px; border-radius:8px; font-family:monospace; cursor:pointer; color:#00ff99; word-break:break-all; border:1px dashed #555;">...</div>
             
-            <div id="lobby-count" class="player-count-label">Players: 0</div>
+            <div id="lobby-count" style="margin: 15px 0; color:#ddd; text-align:left;">Players: 0</div>
+            <ul id="lobbyPlayerList" style="list-style:none; padding:0; text-align:left; max-height:150px; overflow-y:auto;"></ul>
             
-            <ul class="player-list" id="lobbyPlayerList"></ul>
-            
-            <div class="lobby-btns">
-                <div id="hostControls" class="hidden" style="width: 100%; text-align: center;">
-                    <button id="hostStartBtn" class="full-btn btn-primary" style="background:#00ff99; margin: 0;">Start Match</button>
-                </div>
-                
-                <div id="clientStatus" class="hidden">
-                    <p style="color:#00ff99; animation: pulse 1s infinite; margin: 0;">Waiting for host...</p>
-                </div>
-                
-                <button onclick="leaveLobby()" class="full-btn btn-danger" style="margin: 0;">Leave Lobby</button>
+            <div id="hostControls" class="hidden">
+                <button id="hostStartBtn" class="full-btn btn-primary" style="width:100%; margin:10px 0;">Start Match</button>
             </div>
+            <div id="clientStatus" class="hidden">
+                <p style="color:#00ff99;">Waiting for host...</p>
+            </div>
+            <button onclick="leaveLobby()" class="full-btn btn-danger" style="width:100%; margin:10px 0;">Leave</button>
         </div>
     </div>
 
     <div id="game-header">
-        <h1>Stork Merge</h1>
+        <div>
+            <h1>Stork Merge</h1>
+            <span style="font-size:0.8em; opacity:0.7;"></span>
+        </div>
         <div id="score-info">
-            <div id="current-score-box" class="score-box">
-                <div class="score-label">SCORE</div>
+            <div class="score-box">
+                <div class="score-label">Score</div>
                 <div id="score" class="score-value">0</div>
             </div>
-            <div id="high-score-box" class="score-box">
-                <div class="score-label">BEST</div>
+            <div class="score-box">
+                <div class="score-label">Best</div>
                 <div id="high-score" class="score-value">0</div>
             </div>
         </div>
-        <button id="restart-btn">Restart</button>
     </div>
+    <button id="restart-btn" style="margin-bottom: 10px;">New Game</button>
 
     <div id="game-container"></div>
 
-    <div id="keyboard-info">
-        Use <strong>Arrow Keys</strong> or <strong>WASD</strong> to move the tiles.
+    <div id="keyboard-info" style="margin-top:15px; opacity:0.6; font-size:0.9em;">
+        Use Arrow Keys or WASD to move
     </div>
 
     <div id="mobile-controls">
         <div class="mobile-dpad">
-            <button class="move-btn" data-direction="up">↑</button>
-            <button class="move-btn" data-direction="left">←</button>
-            <button class="move-btn" data-direction="right">→</button>
-            <button class="move-btn" data-direction="down">↓</button>
+            <div style="grid-column:2; grid-row:1;">
+                <button class="move-btn" data-direction="up">▲</button>
+            </div>
+            <div style="grid-column:1; grid-row:2;">
+                <button class="move-btn" data-direction="left">◀</button>
+            </div>
+            <div style="grid-column:3; grid-row:2;">
+                <button class="move-btn" data-direction="right">▶</button>
+            </div>
+            <div style="grid-column:2; grid-row:2;">
+                <button class="move-btn" data-direction="down">▼</button>
+            </div>
         </div>
     </div>
 
     <div id="game-over-screen" class="hidden">
-        <h2 id="gameOverTitle">Game Over! 😔</h2>
-        <div id="final-score-details">
-            <div class="final-score-line">Score: <span id="final-score-value" class="final-score-value">0</span></div>
-            <div class="final-score-line high-score">Best: <span id="final-high-score-value" class="final-score-value">0</span></div>
+        <h2 id="gameOverTitle" style="font-size: 3em; margin-bottom: 10px;">Game Over</h2>
+        <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; min-width: 200px; margin-bottom: 20px;">
+            <div style="font-size: 1.2em;">Score: <span id="final-score-value" style="color:#00ff99; font-weight:bold;">0</span></div>
+            <div style="font-size: 1em; color:#ddd;">Best: <span id="final-high-score-value">0</span></div>
         </div>
         
-        <div id="multiplayer-results">
-            <h3 style="color:#00ff99; border-bottom:1px solid #555;">Final Standings</h3>
+        <div id="multiplayer-results" style="display:none; width:90%; max-width:300px; margin-bottom:15px;">
+            <h3 style="border-bottom:1px solid #555; padding-bottom:5px;">Final Standings</h3>
             <div id="mp-results-content"></div>
         </div>
 
-        <div>
-            <button id="restart-game-btn" class="full-btn btn-primary" style="background:#00ff99;">Main Menu</button>
-            <button id="tweet-btn" class="full-btn" style="background:#1DA1F2; color:white;">Share on X</button>
-        </div>
+        <button id="restart-game-btn" class="full-btn btn-primary">Main Menu</button>
+        <button id="tweet-btn" class="full-btn" style="background:#1DA1F2; color:white;">Share on X</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getDatabase, ref, set, push, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+        import { getDatabase, ref, set, update, remove, onValue, get } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB4JSHYOJ2-BdzP8Jt4oZf2S3f_dM58MuE",
@@ -371,46 +301,161 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-
-        window.db = db;
-        window.dbRef = ref;
-        window.dbSet = set;
-        window.dbUpdate = update;
-        window.dbRemove = remove;
-        window.dbOnValue = onValue;
-        window.dbGet = get;
+        window.db = db; window.dbRef = ref; window.dbSet = set; window.dbUpdate = update; window.dbRemove = remove; window.dbOnValue = onValue; window.dbGet = get;
     </script>
 
     <script>
         // ------------------------------------------------------------------
-        // --- GAME LOGIC & VARIABLES ---
+        // --- VISUAL EFFECTS: Particles Background ---
         // ------------------------------------------------------------------
+        const canvas = document.getElementById('canvas-bg');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
 
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.opacity = Math.random() * 0.5 + 0.1;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < 60; i++) particles.push(new Particle());
+        }
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animateParticles);
+        }
+        initParticles();
+        animateParticles();
+
+        // ------------------------------------------------------------------
+        // --- AUDIO ENGINE: Procedural Sounds (Professional) ---
+        // ------------------------------------------------------------------
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSoundPro(type) {
+            if (!audioCtx) initAudio();
+            const now = audioCtx.currentTime;
+            
+            // Master Gain
+            const masterGain = audioCtx.createGain();
+            masterGain.connect(audioCtx.destination);
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            // Filter for softer sound
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = "lowpass";
+            
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(masterGain);
+
+            if (type === 'move') {
+                // Short "tick" / soft woodblock sound
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+                
+                filter.frequency.setValueAtTime(800, now);
+                
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } 
+            else if (type === 'merge') {
+                // "Bubble" / "Pluck" sound - Happy sound
+                osc.type = 'sine';
+                // Randomize slightly for variety
+                const freq = 400 + Math.random() * 100;
+                osc.frequency.setValueAtTime(freq, now);
+                osc.frequency.exponentialRampToValueAtTime(freq * 2, now + 0.15); // Pitch bend up
+                
+                filter.frequency.setValueAtTime(1500, now);
+                
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.2, now + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                
+                osc.start(now);
+                osc.stop(now + 0.3);
+            }
+            else if (type === 'gameover') {
+                // Sad slide down
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.linearRampToValueAtTime(50, now + 1.5);
+                
+                filter.frequency.setValueAtTime(500, now);
+                filter.frequency.linearRampToValueAtTime(100, now + 1.5);
+                
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0, now + 1.5);
+                
+                osc.start(now);
+                osc.stop(now + 1.5);
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // --- GAME LOGIC ---
+        // ------------------------------------------------------------------
         const GRID_SIZE = 4;
         const scoreDisplay = document.getElementById('score');
         const highScoreDisplay = document.getElementById('high-score');
         const gameContainer = document.getElementById('game-container');
         const restartButton = document.getElementById('restart-btn');
         const gameOverScreen = document.getElementById('game-over-screen');
-        const mobileControls = document.getElementById('mobile-controls');
-        const tweetButton = document.getElementById('tweet-btn'); 
-        
         const startScreen = document.getElementById('start-screen'); 
         const lobbyScreen = document.getElementById('lobby-screen');
-
         const playerNameInput = document.getElementById('playerNameInput');
         const startSoloBtn = document.getElementById('start-solo-btn');
         const startMultiBtn = document.getElementById('start-multi-btn');
         const hostStartBtn = document.getElementById('hostStartBtn');
-        const restartGameBtn = document.getElementById('restart-game-btn');
 
-        let board = []; 
+        let board = [];
         let score = 0;
-        let highScore = 0; 
+        let highScore = 0;
         let isGameOver = false;
-        let mergeHappened = false; 
+        let mergeHappened = false;
 
-        // Multiplayer State
+        // Multiplayer Globals
         let isMultiplayer = false;
         let roomId = null;
         let playerId = null;
@@ -425,89 +470,38 @@
             startMultiBtn.innerText = 'Join Lobby';
         }
 
-        // ------------------------
-        // Audio Logic
-        // ------------------------
-        let audioContext = null;
-        const SOUND_PARAMS = {
-            move: { freq: 440, duration: 0.12 },
-            merge: { freq: 660, duration: 0.18 },
-            gameOver: { freq: 220, duration: 0.5 }
-        };
-
-        function ensureAudioContext() {
-            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
-
-        async function playSynth(name) {
-            try {
-                ensureAudioContext();
-                if (!audioContext) return;
-                if (audioContext.state === 'suspended') {
-                    try { await audioContext.resume(); } catch (e) { return; }
-                }
-                const params = SOUND_PARAMS[name];
-                if (!params) return;
-                const now = audioContext.currentTime;
-                const osc = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(params.freq, now);
-                gain.gain.setValueAtTime(0, now);
-                gain.gain.linearRampToValueAtTime(0.25, now + 0.01);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + params.duration);
-                osc.connect(gain);
-                gain.connect(audioContext.destination);
-                osc.start(now);
-                osc.stop(now + params.duration + 0.02);
-            } catch (err) {}
-        }
-        function playSound(name) { playSynth(name).catch(()=>{}); }
-
-        // ------------------------
         // Image Map
-        // ------------------------
         const IMAGE_MAP = {
             2: "tile_2.png", 4: "tile_4.png", 8: "tile_8.png", 16: "tile_16.png",
             32: "tile_32.png", 64: "tile_64.png", 128: "tile_128.png", 256: "tile_256.png",
-            512: "tile_512.png", 1024: "tile_1024.png", 2048: "tile_2048.png", 4096: "tile_4096.png" 
+            512: "tile_512.png", 1024: "tile_1024.png", 2048: "tile_2048.png", 4096: "tile_4096.png"
         };
         function getImageUrl(value) { return IMAGE_MAP[value] || ''; }
 
-        // ------------------------
-        // Local High Score
-        // ------------------------
         function loadHighScore() {
-            const storedScore = localStorage.getItem('storkMergeHighScore');
-            highScore = storedScore ? parseInt(storedScore, 10) : 0;
+            highScore = parseInt(localStorage.getItem('storkMergeHighScore') || 0, 10);
             highScoreDisplay.textContent = highScore;
         }
         function saveHighScore() {
             localStorage.setItem('storkMergeHighScore', highScore);
         }
 
-        // ------------------------
-        // Game Logic Core
-        // ------------------------
         function initializeGame() {
+            initAudio(); // Initialize audio context
             board = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
             score = 0;
             isGameOver = false;
-            mergeHappened = false;
             
             gameOverScreen.classList.add('hidden');
             startScreen.classList.add('hidden');
             lobbyScreen.classList.add('hidden');
             
-            if (isMultiplayer) {
-                document.getElementById('restart-btn').style.display = 'none';
-            } else {
-                document.getElementById('restart-btn').style.display = 'block';
-            }
+            document.getElementById('restart-btn').style.display = isMultiplayer ? 'none' : 'block';
 
             loadHighScore();
-
             gameContainer.innerHTML = '';
+            
+            // Create Grid
             for (let r = 0; r < GRID_SIZE; r++) {
                 for (let c = 0; c < GRID_SIZE; c++) {
                     const tile = document.createElement('div');
@@ -522,72 +516,6 @@
             updateBoardUI();
         }
 
-        function slide(row) {
-            let arr = row.filter(val => val !== 0);
-            let zeros = Array(GRID_SIZE - arr.length).fill(0);
-            return zeros.concat(arr);
-        }
-
-        function merge(row) {
-            let initialScore = score;
-            for (let i = GRID_SIZE - 1; i > 0; i--) {
-                if (row[i] === row[i - 1] && row[i] !== 0) {
-                    row[i] *= 2;
-                    score += row[i];
-                    row[i - 1] = 0;
-                }
-            }
-            if (score > initialScore) mergeHappened = true; 
-            return row;
-        }
-
-        function moveRight() {
-            let boardChanged = false;
-            for (let r = 0; r < GRID_SIZE; r++) {
-                let originalRow = [...board[r]];
-                let row = board[r];
-                row = slide(row); row = merge(row); row = slide(row);
-                board[r] = row;
-                if (originalRow.some((val, i) => val !== row[i])) boardChanged = true;
-            }
-            return boardChanged;
-        }
-        function moveLeft() {
-            let boardChanged = false;
-            for (let r = 0; r < GRID_SIZE; r++) {
-                let originalRow = [...board[r]];
-                let row = [...board[r]];
-                row.reverse(); row = slide(row); row = merge(row); row = slide(row); row.reverse();
-                board[r] = row;
-                if (originalRow.some((val, i) => val !== row[i])) boardChanged = true;
-            }
-            return boardChanged;
-        }
-        function moveUp() {
-            let boardChanged = false;
-            for (let c = 0; c < GRID_SIZE; c++) {
-                let col = [];
-                for (let r = 0; r < GRID_SIZE; r++) col.push(board[r][c]);
-                let originalCol = [...col];
-                col.reverse(); col = slide(col); col = merge(col); col = slide(col); col.reverse();
-                for (let r = 0; r < GRID_SIZE; r++) board[r][c] = col[r];
-                if (originalCol.some((val, i) => val !== col[i])) boardChanged = true;
-            }
-            return boardChanged;
-        }
-        function moveDown() {
-            let boardChanged = false;
-            for (let c = 0; c < GRID_SIZE; c++) {
-                let col = [];
-                for (let r = 0; r < GRID_SIZE; r++) col.push(board[r][c]);
-                let originalCol = [...col];
-                col = slide(col); col = merge(col); col = slide(col);
-                for (let r = 0; r < GRID_SIZE; r++) board[r][c] = col[r];
-                if (originalCol.some((val, i) => val !== col[i])) boardChanged = true;
-            }
-            return boardChanged;
-        }
-
         function addRandomTile() {
             if (isBoardFull()) return false;
             let r, c;
@@ -595,7 +523,17 @@
                 r = Math.floor(Math.random() * GRID_SIZE);
                 c = Math.floor(Math.random() * GRID_SIZE);
             } while (board[r][c] !== 0);
-            board[r][c] = (Math.random() < 0.9) ? 2 : 4; 
+            
+            // Trigger animation for new tile
+            board[r][c] = (Math.random() < 0.9) ? 2 : 4;
+            const tile = document.getElementById(`tile-${r}-${c}`);
+            
+            // Hacky way to ensure animation plays on next render
+            setTimeout(() => {
+                if(tile) tile.classList.add('tile-pop');
+                setTimeout(() => tile?.classList.remove('tile-pop'), 200);
+            }, 50);
+            
             return true;
         }
 
@@ -604,13 +542,25 @@
                 for (let c = 0; c < GRID_SIZE; c++) {
                     const tileElement = document.getElementById(`tile-${r}-${c}`);
                     const value = board[r][c];
+                    
+                    // Reset classes
                     tileElement.className = 'tile'; 
                     tileElement.style.backgroundImage = 'none';
-                    tileElement.textContent = ''; 
+                    tileElement.textContent = '';
+                    
                     if (value !== 0) {
+                        tileElement.classList.add(`tile-${value}`);
                         const imageUrl = getImageUrl(value);
-                        if (imageUrl) tileElement.style.backgroundImage = `url('${imageUrl}')`;
-                        tileElement.classList.add(`tile-${value}`); 
+                        // Check if image exists (basic check)
+                        if (imageUrl) {
+                             tileElement.style.backgroundImage = `url('${imageUrl}')`;
+                             // If user prefers text or image fails, we can show text too, but let's stick to clean
+                             if(!imageUrl) tileElement.textContent = value;
+                        } else {
+                            tileElement.textContent = value;
+                        }
+                        // Fallback text if image doesn't load handled by CSS colors mostly
+                        if(tileElement.style.backgroundImage == 'none') tileElement.textContent = value;
                     }
                 }
             }
@@ -619,30 +569,85 @@
                 highScore = score;
                 highScoreDisplay.textContent = highScore;
             }
-
             if (isMultiplayer) syncScore();
         }
 
-        function isBoardFull() {
-            for (let r = 0; r < GRID_SIZE; r++) {
-                for (let c = 0; c < GRID_SIZE; c++) {
-                    if (board[r][c] === 0) return false;
-                }
-            }
-            return true;
+        function slide(row) {
+            let arr = row.filter(val => val !== 0);
+            let zeros = Array(GRID_SIZE - arr.length).fill(0);
+            return zeros.concat(arr);
         }
 
+        function merge(row) {
+            for (let i = GRID_SIZE - 1; i > 0; i--) {
+                if (row[i] === row[i - 1] && row[i] !== 0) {
+                    row[i] *= 2;
+                    score += row[i];
+                    row[i - 1] = 0;
+                    mergeHappened = true;
+                }
+            }
+            return row;
+        }
+
+        function move(direction) {
+            let boardChanged = false;
+            mergeHappened = false;
+
+            // Deep copy logic simplified for brevity
+            const oldBoard = JSON.stringify(board);
+
+            if (direction === 'right') {
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    let row = board[r];
+                    row = slide(row); row = merge(row); row = slide(row);
+                    board[r] = row;
+                }
+            } else if (direction === 'left') {
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    let row = board[r].reverse();
+                    row = slide(row); row = merge(row); row = slide(row);
+                    board[r] = row.reverse();
+                }
+            } else if (direction === 'up') {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    let col = [];
+                    for(let r=0; r<GRID_SIZE; r++) col.push(board[r][c]);
+                    col = col.reverse(); col = slide(col); col = merge(col); col = slide(col); col = col.reverse();
+                    for(let r=0; r<GRID_SIZE; r++) board[r][c] = col[r];
+                }
+            } else if (direction === 'down') {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    let col = [];
+                    for(let r=0; r<GRID_SIZE; r++) col.push(board[r][c]);
+                    col = slide(col); col = merge(col); col = slide(col);
+                    for(let r=0; r<GRID_SIZE; r++) board[r][c] = col[r];
+                }
+            }
+
+            if (JSON.stringify(board) !== oldBoard) boardChanged = true;
+
+            if (boardChanged) {
+                playSoundPro(mergeHappened ? 'merge' : 'move');
+                addRandomTile();
+                updateBoardUI();
+                checkGameOver();
+            }
+        }
+
+        function isBoardFull() {
+            for(let r=0;r<GRID_SIZE;r++)
+                for(let c=0;c<GRID_SIZE;c++)
+                    if(board[r][c]===0) return false;
+            return true;
+        }
         function hasMoves() {
-            for (let r = 0; r < GRID_SIZE; r++) {
-                for (let c = 0; c < GRID_SIZE - 1; c++) {
-                    if (board[r][c] === board[r][c+1]) return true; 
-                }
-            }
-            for (let c = 0; c < GRID_SIZE; c++) {
-                for (let r = 0; r < GRID_SIZE - 1; r++) {
-                    if (board[r][c] === board[r+1][c]) return true; 
-                }
-            }
+            for(let r=0;r<GRID_SIZE;r++)
+                for(let c=0;c<GRID_SIZE-1;c++)
+                    if(board[r][c]===board[r][c+1]) return true;
+            for(let c=0;c<GRID_SIZE;c++)
+                for(let r=0;r<GRID_SIZE-1;r++)
+                    if(board[r][c]===board[r+1][c]) return true;
             return false;
         }
 
@@ -658,278 +663,132 @@
                     document.getElementById('gameOverTitle').innerText = "Finished";
                     document.getElementById('multiplayer-results').style.display = 'block';
                     if (window.dbUpdate && roomId && playerId) {
-                        window.dbUpdate(window.dbRef(window.db, `rooms/${roomId}/players/${playerId}`), {
-                            score: score,
-                            isDead: true 
-                        });
+                        window.dbUpdate(window.dbRef(window.db, `rooms/${roomId}/players/${playerId}`), { score: score, isDead: true });
                     }
                     fetchLeaderboard(); 
                 } else {
-                    document.getElementById('gameOverTitle').innerText = "Game Over! 😔";
+                    document.getElementById('gameOverTitle').innerText = "Game Over";
                     document.getElementById('multiplayer-results').style.display = 'none';
                 }
 
                 gameOverScreen.classList.remove('hidden');
-                playSound('gameOver'); 
+                playSoundPro('gameover'); 
             }
         }
 
-        function processMove(moveFunction) {
-            if (isGameOver) return false;
-            mergeHappened = false; 
-            const moved = moveFunction();
-            if (moved) {
-                if (mergeHappened) playSound('merge'); else playSound('move'); 
-                addRandomTile();
-                updateBoardUI();
-                checkGameOver();
-            }
-            return moved;
-        }
-
-        // ------------------------------------------------------------------
-        // --- MULTIPLAYER LOGIC ---
-        // ------------------------------------------------------------------
-
-        function getPlayerName(isForMultiplayer = false){
+        // --- Multiplayer Logic (Condensed) ---
+        function getPlayerName(){
             let name = playerNameInput.value.trim();
-            if (isForMultiplayer && !name) {
-                return null;
-            }
             if(!name) name = "Stork_" + Math.floor(Math.random()*1000);
             return name;
         }
 
         async function createLobby(){
-            if(joiningInProgress) return;
-            if(!window.db) { alert("Firebase not loaded yet."); return; }
-            
-            playerName = getPlayerName(true);
-            if (!playerName) {
-                alert("Please enter a Username to Create a Lobby!");
-                playerNameInput.focus();
-                return;
-            }
-
-            joiningInProgress = true;
+            if(joiningInProgress || !window.db) return;
+            if(!playerNameInput.value.trim()){ alert("Please enter your username!"); return; }
             
             startMultiBtn.disabled = true; startMultiBtn.innerText = "Creating...";
-
+            playerName = getPlayerName();
             playerId = 'host_' + Date.now();
             roomId = 'room_' + Math.floor(Math.random()*10000);
-            isHost = true;
-            isMultiplayer = true;
+            isHost = true; isMultiplayer = true;
 
-            const roomRef = window.dbRef(window.db, `rooms/${roomId}`);
-            await window.dbSet(roomRef, {
+            await window.dbSet(window.dbRef(window.db, `rooms/${roomId}`), {
                 status: 'lobby',
-                players: {
-                    [playerId]: { name: playerName, score: 0, isHost: true, isDead: false }
-                }
+                players: { [playerId]: { name: playerName, score: 0, isHost: true, isDead: false } }
             });
-
-            // NO onDisconnect remove here! Player stays in DB if they close tab.
-            
-            showLobbyUI();
-            listenToLobby();
-            joiningInProgress = false;
+            showLobbyUI(); listenToLobby(); joiningInProgress = false;
         }
 
         async function joinLobby(){
-            if(joiningInProgress) return;
-            if(!window.db) { alert("Firebase not loaded."); return; }
-            if(!roomId) return;
+            if(joiningInProgress || !window.db || !roomId) return;
+            if(!playerNameInput.value.trim()){ alert("Please enter your username!"); return; }
+
+            startMultiBtn.disabled = true; startMultiBtn.innerText = "Joining...";
+            playerName = getPlayerName();
             
-            playerName = getPlayerName(true);
-            if (!playerName) {
-                alert("Please enter a Username to Join!");
-                playerNameInput.focus();
-                return;
+            // Check name dupes
+            const s = await window.dbGet(window.dbRef(window.db, `rooms/${roomId}/players`));
+            if(s.exists() && Object.values(s.val()).some(p=>p.name === playerName)){
+                alert("This name is already taken!"); startMultiBtn.disabled=false; return;
             }
 
-            joiningInProgress = true;
-            startMultiBtn.disabled = true; startMultiBtn.innerText = "Joining...";
-
-            try {
-                const roomPlayersRef = window.dbRef(window.db, `rooms/${roomId}/players`);
-                const snapshot = await window.dbGet(roomPlayersRef);
-                if (snapshot.exists()) {
-                    const players = snapshot.val();
-                    const isNameTaken = Object.values(players).some(p => p.name.toLowerCase() === playerName.toLowerCase());
-                    if (isNameTaken) {
-                        alert("Username already taken in this room!");
-                        joiningInProgress = false;
-                        startMultiBtn.disabled = false; startMultiBtn.innerText = "Join Lobby";
-                        return;
-                    }
-                }
-            } catch (e) { console.error(e); }
-
             playerId = 'p_' + Date.now();
-            isHost = false;
-            isMultiplayer = true;
-
-            const playerRef = window.dbRef(window.db, `rooms/${roomId}/players/${playerId}`);
-            await window.dbSet(playerRef, {
+            isHost = false; isMultiplayer = true;
+            await window.dbSet(window.dbRef(window.db, `rooms/${roomId}/players/${playerId}`), {
                 name: playerName, score: 0, isHost: false, isDead: false
             });
-
-            // NO onDisconnect remove here! Player stays in DB if they close tab.
-
-            showLobbyUI();
-            listenToLobby();
-            joiningInProgress = false;
+            showLobbyUI(); listenToLobby(); joiningInProgress = false;
         }
 
         function showLobbyUI(){
             startScreen.classList.add('hidden');
             lobbyScreen.classList.remove('hidden');
             document.getElementById('shareLink').innerText = window.location.origin + window.location.pathname + '?room=' + roomId;
-            
-            if(isHost) {
-                document.getElementById('hostControls').classList.remove('hidden');
-                document.getElementById('clientStatus').classList.add('hidden');
-            } else {
-                document.getElementById('hostControls').classList.add('hidden');
-                document.getElementById('clientStatus').classList.remove('hidden');
-            }
+            if(isHost) document.getElementById('hostControls').classList.remove('hidden');
+            else document.getElementById('clientStatus').classList.remove('hidden');
         }
 
         function listenToLobby(){
-            const roomRef = window.dbRef(window.db, `rooms/${roomId}`);
-            window.dbOnValue(roomRef, (snapshot) => {
-                const data = snapshot.val();
-                if(!data) {
-                    if(isGameOver) return; 
-                    alert("Room closed."); window.location.href = window.location.pathname; return;
-                }
+            window.dbOnValue(window.dbRef(window.db, `rooms/${roomId}`), (s) => {
+                const data = s.val();
+                if(!data) { if(!isGameOver) { alert("Room closed."); window.location.href = window.location.pathname; } return; }
                 
-                const list = document.getElementById('lobbyPlayerList');
-                list.innerHTML = '';
-                let playerCount = 0;
-                
-                if(data.players) {
-                    const players = Object.values(data.players);
-                    playerCount = players.length;
-                    players.forEach(p => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `<span>${p.name}</span> ${p.isHost ? '<span class="is-host">HOST</span>' : ''}`;
-                        list.appendChild(li);
-                    });
-                }
-                
-                // Update Player Count
-                document.getElementById('lobby-count').innerText = `Players: ${playerCount}`;
+                const pList = Object.values(data.players || {});
+                document.getElementById('lobbyPlayerList').innerHTML = pList.map(p => `<li>${p.name} ${p.isHost?'(Host)':''}</li>`).join('');
+                document.getElementById('lobby-count').innerText = `Players: ${pList.length}`;
 
-                if(data.status === 'playing' && !gameContainer.children.length) {
-                    initializeGame();
-                    fetchLeaderboard(); 
+                if(data.status === 'playing' && gameContainer.innerHTML === '') {
+                    initializeGame(); fetchLeaderboard();
                 }
             });
         }
-
-        function startMultiplayerGame(){
-            if(!isHost) return;
-            window.dbUpdate(window.dbRef(window.db, `rooms/${roomId}`), { status: 'playing' });
-        }
-
+        
         function syncScore(){
-            if(!isMultiplayer || !roomId || !playerId) return;
-            window.dbUpdate(window.dbRef(window.db, `rooms/${roomId}/players/${playerId}`), { score: score });
+            if(isMultiplayer && roomId && playerId) window.dbUpdate(window.dbRef(window.db, `rooms/${roomId}/players/${playerId}`), { score: score });
         }
-
         function fetchLeaderboard(){
-            const playersRef = window.dbRef(window.db, `rooms/${roomId}/players`);
-            window.dbOnValue(playersRef, (snapshot) => {
-                const players = snapshot.val();
-                if(!players) return;
-                const sorted = Object.values(players).sort((a,b) => b.score - a.score);
-
-                const finalContainer = document.getElementById('mp-results-content');
-                finalContainer.innerHTML = '';
-                sorted.forEach((p, idx) => {
-                    const div = document.createElement('div');
-                    div.className = 'mp-rank-row';
-                    let medal = idx===0?'🥇':(idx===1?'🥈':(idx===2?'🥉': `#${idx+1}`));
-                    
-                    let statusText = p.isDead ? '(✅ Final Score)' : '(⏳ Playing ...)';
-                    
-                    div.innerHTML = `<span>${medal} ${p.name} <span style="font-size:0.8em; color:#aaa;">${statusText}</span></span> <span style="font-weight:bold; color:#00ff99;">${p.score}</span>`;
-                    finalContainer.appendChild(div);
-                });
+            window.dbOnValue(window.dbRef(window.db, `rooms/${roomId}/players`), (s) => {
+                const p = Object.values(s.val()||{}).sort((a,b)=>b.score-a.score);
+                document.getElementById('mp-results-content').innerHTML = p.map((x,i)=>
+                    `<div style="display:flex;justify-content:space-between;border-bottom:1px solid #444;padding:5px;"><span>${i+1}. ${x.name} ${x.isDead?'✅ Final Score':''}</span> <span style="color:#00ff99">${x.score}</span></div>`
+                ).join('');
             });
         }
 
-        // ------------------------
-        // Controls & Events
-        // ------------------------
+        // Controls
         document.addEventListener('keyup', (e) => {
             if (isGameOver) return;
-            let moveFunction = null;
-            switch (e.code) {
-                case 'ArrowLeft': case 'KeyA': moveFunction = moveLeft; break;
-                case 'ArrowRight': case 'KeyD': moveFunction = moveRight; break;
-                case 'ArrowUp': case 'KeyW': moveFunction = moveUp; break;
-                case 'ArrowDown': case 'KeyS': moveFunction = moveDown; break;
-            }
-            if (moveFunction) processMove(moveFunction);
-        });
-
-        mobileControls.addEventListener('click', (e) => {
-            if (isGameOver || !e.target.classList.contains('move-btn') && !e.target.parentElement.classList.contains('move-btn')) return;
-            
-            // Handle clicking icon vs button itself
-            let target = e.target;
-            if(!target.classList.contains('move-btn')) target = target.parentElement;
-
-            const dir = target.getAttribute('data-direction');
-            let mf = null;
-            if(dir==='left') mf=moveLeft; else if(dir==='right') mf=moveRight;
-            else if(dir==='up') mf=moveUp; else if(dir==='down') mf=moveDown;
-            if(mf) processMove(mf);
+            if(['ArrowLeft','KeyA'].includes(e.code)) move('left');
+            else if(['ArrowRight','KeyD'].includes(e.code)) move('right');
+            else if(['ArrowUp','KeyW'].includes(e.code)) move('up');
+            else if(['ArrowDown','KeyS'].includes(e.code)) move('down');
         });
         
-        // Prevent default touch moves to stop scrolling on body
-        document.body.addEventListener('touchmove', function(e) {
-            if (!e.target.closest('.player-list')) {
-                e.preventDefault();
-            }
-        }, { passive: false });
+        const mBtns = document.querySelectorAll('.move-btn');
+        mBtns.forEach(btn => btn.addEventListener('click', (e) => {
+             e.preventDefault();
+             move(btn.dataset.direction);
+        }));
 
-        startSoloBtn.onclick = () => { 
-            playerName = getPlayerName(false); 
-            isMultiplayer=false; 
-            initializeGame(); 
-        };
-        startMultiBtn.onclick = () => {
-            if(roomId) joinLobby(); else createLobby();
-        };
-        hostStartBtn.onclick = startMultiplayerGame;
-        restartButton.onclick = () => { if(!isMultiplayer) initializeGame(); };
-        restartGameBtn.onclick = () => {
-            window.location.href = window.location.pathname; 
-        };
-
-        tweetButton.addEventListener('click', () => {
-            const msg = `I scored ${score} in Stork Merge! #StorkMerge #Web3Gaming`;
-            window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(msg)}`, '_blank');
-        });
-
-        window.copyLink = function(){
-            const link = document.getElementById('shareLink').innerText;
-            navigator.clipboard.writeText(link).then(() => alert("Copied!"));
-        }
+        startSoloBtn.onclick = () => { isMultiplayer=false; initializeGame(); };
+        startMultiBtn.onclick = () => { roomId ? joinLobby() : createLobby(); };
+        hostStartBtn.onclick = () => window.dbUpdate(window.dbRef(window.db, `rooms/${roomId}`), { status: 'playing' });
+        restartButton.onclick = initializeGame;
+        document.getElementById('restart-game-btn').onclick = () => window.location.href = window.location.pathname;
         
-        window.leaveLobby = async function(){
+        window.copyLink = () => { navigator.clipboard.writeText(document.getElementById('shareLink').innerText).then(()=>alert('Copied!')); };
+        window.leaveLobby = async () => {
             if(window.db && roomId) {
-                if(isHost) {
-                    await window.dbRemove(window.dbRef(window.db, `rooms/${roomId}`));
-                } else if(playerId) {
-                    await window.dbRemove(window.dbRef(window.db, `rooms/${roomId}/players/${playerId}`));
-                }
+                if(isHost) await window.dbRemove(window.dbRef(window.db, `rooms/${roomId}`));
+                else await window.dbRemove(window.dbRef(window.db, `rooms/${roomId}/players/${playerId}`));
             }
             window.location.href = window.location.pathname;
-        }
+        };
+
+        document.getElementById('tweet-btn').onclick = () => {
+             window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(`I scored ${score} in Stork Merge #StorkMerge`)}`, '_blank');
+        };
 
         loadHighScore();
     </script>
